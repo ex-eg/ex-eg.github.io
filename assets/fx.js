@@ -79,8 +79,8 @@
 
 /* ---------------------------------------------------------------------------
    Cookie-consent notice — shown once, remembered locally. Loaded on every page
-   (this file is included site-wide). elgoharyX uses only essential storage
-   (login session + theme preference), so this is an informational consent.
+   (this file is included site-wide). Covers essential storage (login session +
+   theme preference) AND third-party advertising cookies (Google AdSense).
 --------------------------------------------------------------------------- */
 (function () {
   'use strict';
@@ -109,7 +109,7 @@
     bar.innerHTML =
       '<div class="ck-in">' +
         '<span class="ck-ic">' + COOKIE_IC + '</span>' +
-        '<div class="ck-tx">يستخدم <b>elgoharyX</b> ملفات تعريف الارتباط (الكوكيز) الأساسية لحفظ جلسة دخولك وتفضيلاتك وتحسين تجربتك. ' +
+        '<div class="ck-tx">يستخدم <b>elgoharyX</b> ملفات تعريف الارتباط (الكوكيز) لحفظ جلسة دخولك وتفضيلاتك، ولعرض الإعلانات عبر <b>Google</b> وشركائها. بالضغط على «موافق» فإنك توافق على استخدامها. ' +
           '<a href="privacy.html">سياسة الخصوصية</a></div>' +
         '<div class="ck-acts">' +
           '<button class="ck-btn ok" id="ckAccept">موافق</button>' +

@@ -3,7 +3,7 @@
    the DB imports `db` and the helpers from here instead of re-initializing. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
-import { getDatabase, ref, set, get, child, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import { getDatabase, ref, set, get, child, remove, update, increment } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -2020,7 +2020,12 @@ const auth = getAuth(app);
         return;
       }
       const d = snap.val();
-      const go = ()=>renderBlogIndex(id,d);
+      const go = ()=>{
+        const pq=new URLSearchParams(location.search).get('post');
+        const pi=(pq!=null && pq!=='')?parseInt(pq,10):NaN;
+        if(!isNaN(pi) && pi>=0 && blogPosts(d)[pi]) renderArticle(id,d,pi);
+        else renderBlogIndex(id,d);
+      };
       if(isLocked(d)){ showPassGate('b', id, d, go); return; }
       go();
     }catch(e){
@@ -2139,6 +2144,59 @@ const auth = getAuth(app);
     });
     if(d.threeD) wireBlogTilt(root);
   }
+  /* ---------- blog rating system (⭐ 1–5, ranks blogs in Explore) ---------- */
+  const RSTAR='<svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 17l-5.3 2.6 1.1-6L3.4 9.4l6-.8L12 3Z"/></svg>';
+  const blogAvg   = b => { const c=+b.rCount||0; return c ? (+b.rSum||0)/c : 0; };
+  /* ترتيب: متوسط بايزي بسيط يمنع تصدّر تقييم واحد بـ5 نجوم؛ غير المقيَّمة في الأسفل */
+  const blogScore = b => { const c=+b.rCount||0, s=+b.rSum||0; return c ? (s + 3.5*2)/(c + 2) : 0; };
+  function starRow(avg, extraCls){
+    const r=Math.round(avg);
+    let h='';
+    for(let n=1;n<=5;n++) h+=`<span class="rs-star${n<=r?' on':''}">${RSTAR}</span>`;
+    return `<span class="star-row ${extraCls||''}">${h}</span>`;
+  }
+  function renderRatingWidget(el, id, avg, count, mine){
+    const disp = mine || avg;
+    el.innerHTML = `<div class="br-in">
+      <span class="br-label">قيّم هذه المدونة</span>
+      <div class="br-stars" role="group" aria-label="تقييم من 5 نجوم">
+        ${[1,2,3,4,5].map(n=>`<button type="button" class="br-star${n<=Math.round(disp)?' on':''}" data-star="${n}" aria-label="${n} من 5">${RSTAR}</button>`).join('')}
+      </div>
+      <div class="br-info">${count?`<b>${avg.toFixed(1)}</b><span>من 5 · ${count} تقييم</span>`:`<span>كن أول من يقيّمها</span>`}${mine?`<span class="br-mine">تقييمك ${mine}★</span>`:''}</div>
+    </div>`;
+    const stars=el.querySelectorAll('.br-star');
+    const paint=n=>stars.forEach(s=>s.classList.toggle('on', +s.dataset.star<=n));
+    stars.forEach(b=>{
+      b.onmouseenter=()=>paint(+b.dataset.star);
+      b.onclick=()=>rateBlog(id, +b.dataset.star);
+    });
+    el.querySelector('.br-stars').onmouseleave=()=>paint(Math.round(mine||avg));
+  }
+  async function loadBlogRating(id){
+    const el=$('#blogRate'); if(!el) return;
+    try{
+      const s=await get(child(ref(db),'blogRatings/'+id));
+      const votes=s.exists()?s.val():{}; let sum=0,count=0;
+      for(const k in votes){ const v=+votes[k]; if(v>=1&&v<=5){ sum+=v; count++; } }
+      const uid=getSession();
+      renderRatingWidget(el, id, count?sum/count:0, count, (uid&&votes[uid])?+votes[uid]:0);
+    }catch(e){ console.warn('rating load failed', e); el.style.display='none'; }
+  }
+  async function rateBlog(id, val){
+    const uid=getSession();
+    if(!uid){ toast('سجّل الدخول لتقييم المدونة'); return; }
+    try{
+      await set(ref(db,'blogRatings/'+id+'/'+uid), val);
+      const s=await get(child(ref(db),'blogRatings/'+id));
+      const votes=s.exists()?s.val():{}; let sum=0,count=0;
+      for(const k in votes){ const v=+votes[k]; if(v>=1&&v<=5){ sum+=v; count++; } }
+      const idx=await get(child(ref(db),'blogIndex/'+id));
+      if(idx.exists()) await update(ref(db,'blogIndex/'+id), { rSum:sum, rCount:count });
+      toast('شكراً لتقييمك ✓');
+      const el=$('#blogRate'); if(el) renderRatingWidget(el, id, count?sum/count:0, count, val);
+    }catch(e){ console.error(e); toast('تعذّر حفظ التقييم — تأكد من نشر قواعد قاعدة البيانات'); }
+  }
+
   function renderBlogIndex(id,d){
     const dz = blogShell(d);
     const posts = blogPosts(d);
@@ -2164,7 +2222,8 @@ const auth = getAuth(app);
       </div></footer>`;
     const hasSide = bSidebarStyle(d)!=='none';
     const adSlot = `<div class="elg-ad" data-ad="article"></div>`;
-    const main = `${blogSearchBox(d)}${feat}${adSlot}${grid}${about}`;
+    const rateBar = `<div class="blog-rate" id="blogRate"></div>`;
+    const main = `${blogSearchBox(d)}${feat}${rateBar}${adSlot}${grid}${about}`;
     const layout = hasSide
       ? `<div class="blog-layout"><div class="blog-main">${main}</div>${blogSidebar(d,posts)}</div>`
       : main;
@@ -2175,8 +2234,96 @@ const auth = getAuth(app);
     wireBlogIndex(id,d);
     if(d.ownerUid) getPremium(d.ownerUid).then(pp=>{ if(premiumActive(pp)){ const b=$('#app .blog'); if(b) b.classList.add('owner-premium'); } });
     if(window.elgFillAds) window.elgFillAds($('#app'));
+    loadBlogRating(id);
+    try{ history.replaceState(null,'', pageUrl('blog.html','blog='+id)); }catch(e){}
     window.scrollTo(0,0);
   }
+  /* ---------- article engagement: views, likes (heart), permalink share ---------- */
+  const ART_HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9.5-9C1 9 2.5 5.3 6 5.3c2 0 3.2 1.2 4 2.4.8-1.2 2-2.4 4-2.4 3.5 0 5 3.7 3.5 6.7C19 16.5 12 21 12 21Z"/></svg>';
+  const ART_SHARE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>';
+  const ART_EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const fmtNum = n => { n=+n||0; return n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'K' : String(n); };
+  function setLikeBtn(btn, count, mine){ if(!btn) return; btn.dataset.lc=count; btn.classList.toggle('on',!!mine);
+    const c=btn.querySelector('.al-count'); if(c) c.textContent=fmtNum(count); }
+  async function loadArticleEngagement(id, idx){
+    // count one view per browser session per article
+    try{ const vk='av_'+id+'_'+idx;
+      if(!sessionStorage.getItem(vk)){ sessionStorage.setItem(vk,'1');
+        update(ref(db,'articleStats/'+id+'/'+idx), { views: increment(1) }).catch(()=>{}); }
+    }catch(e){}
+    try{
+      const s=await get(child(ref(db),'articleStats/'+id+'/'+idx));
+      const st=s.exists()?s.val():{};
+      const views=+st.views||0, likes=st.likes||{}; let lc=0; for(const k in likes) if(likes[k]) lc++;
+      const uid=getSession();
+      const vEl=$('#artViews'); if(vEl) vEl.innerHTML=ART_EYE+' '+fmtNum(views)+' مشاهدة';
+      setLikeBtn($('#artLike'), lc, uid && likes[uid]);
+    }catch(e){ console.warn('engagement load failed', e); const vEl=$('#artViews'); if(vEl) vEl.style.display='none'; }
+  }
+  async function toggleArtLike(id, idx){
+    const uid=getSession();
+    if(!uid){ toast('سجّل الدخول للإعجاب بالمقال'); return; }
+    const btn=$('#artLike'); if(!btn) return;
+    const willLike=!btn.classList.contains('on');
+    setLikeBtn(btn, (+btn.dataset.lc||0)+(willLike?1:-1), willLike);
+    try{ const r=ref(db,'articleStats/'+id+'/'+idx+'/likes/'+uid);
+      if(willLike) await set(r,true); else await remove(r);
+    }catch(e){ console.error(e); toast('تعذّر — تأكد من نشر قواعد قاعدة البيانات'); loadArticleEngagement(id,idx); }
+  }
+  function shareArticle(id, idx){
+    const url=pageUrl('blog.html','blog='+id+'&post='+idx);
+    if(navigator.share){ navigator.share({title:document.title, url}).catch(()=>{}); }
+    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(()=>toast('تم نسخ رابط المقال ✓')); }
+    else toast(url);
+  }
+
+  /* ---------- article comments ---------- */
+  const cmtDate = at => { try{ return new Date(at).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}); }catch(e){ return ''; } };
+  function commentHTML(c, cid, canDel){
+    return `<div class="ac-item" data-cid="${cid}">
+      <span class="ac-av">${esc(initials(c.name||'؟'))}</span>
+      <div class="ac-main">
+        <div class="ac-top"><b>${esc(c.name||'مستخدم')}</b><span class="ac-date">${cmtDate(c.at)}</span>
+          ${canDel?`<button class="ac-del" data-del="${cid}" type="button">حذف</button>`:''}</div>
+        <div class="ac-tx">${esc(c.text||'')}</div>
+      </div></div>`;
+  }
+  async function loadComments(id, idx, d){
+    const listEl=$('#acList'), cntEl=$('#acCount'); if(!listEl) return;
+    try{
+      const s=await get(child(ref(db),'articleComments/'+id+'/'+idx));
+      const obj=s.exists()?s.val():{};
+      const arr=Object.entries(obj).map(([cid,c])=>({cid,...(c||{})})).filter(c=>c && c.text);
+      arr.sort((a,b)=>(b.at||0)-(a.at||0));
+      const uid=getSession();
+      if(cntEl) cntEl.textContent = arr.length?('('+arr.length+')'):'';
+      listEl.innerHTML = arr.length
+        ? arr.map(c=>commentHTML(c, c.cid, !!(uid && (c.uid===uid || uid===(d&&d.ownerUid))))).join('')
+        : `<div class="ac-empty">لا توجد تعليقات بعد — كن أول من يعلّق.</div>`;
+      listEl.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteComment(id,idx,b.dataset.del,d));
+    }catch(e){ console.warn('comments load failed', e); listEl.innerHTML=`<div class="ac-empty">تعذّر تحميل التعليقات — تأكد من نشر قواعد قاعدة البيانات.</div>`; }
+  }
+  async function postComment(id, idx, d){
+    const uid=getSession();
+    if(!uid){ toast('سجّل الدخول للتعليق'); return; }
+    const ta=$('#acText'); if(!ta) return;
+    const text=(ta.value||'').trim();
+    if(text.length<1){ toast('اكتب تعليقًا أولاً'); return; }
+    if(text.length>1500){ toast('التعليق طويل جدًا (1500 حرف كحد أقصى)'); return; }
+    const btn=$('#acPost'); if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
+    try{
+      const name=((currentUser&&currentUser.username)||'مستخدم').slice(0,60);
+      await set(ref(db,'articleComments/'+id+'/'+idx+'/'+shortId(14)), { uid, name, text, at:Date.now() });
+      ta.value=''; toast('تم إضافة تعليقك ✓'); loadComments(id,idx,d);
+    }catch(e){ console.error(e); toast('تعذّر إضافة التعليق — تأكد من نشر قواعد قاعدة البيانات'); }
+    finally{ if(btn){ btn.disabled=false; btn.textContent='أضف تعليق'; } }
+  }
+  async function deleteComment(id, idx, cid, d){
+    if(!confirm('حذف هذا التعليق؟')) return;
+    try{ await remove(ref(db,'articleComments/'+id+'/'+idx+'/'+cid)); toast('تم حذف التعليق'); loadComments(id,idx,d); }
+    catch(e){ console.error(e); toast('تعذّر الحذف — تأكد من نشر القواعد'); }
+  }
+
   function renderArticle(id,d,idx){
     const dz = blogShell(d);
     const posts = blogPosts(d);
@@ -2193,15 +2340,34 @@ const auth = getAuth(app);
         <h1 class="art-title">${esc(p.title||'مقالة')}</h1>
         <div class="art-meta">${blogAvatar(d.author,'bh-av')}<span>${esc(d.author||'الكاتب')}</span>
           ${blogFmtDate(p.date)?`<span class="dot"></span><span>${blogFmtDate(p.date)}</span>`:''}
-          <span class="dot"></span><span>${blogReadTime(p.body)}</span></div>
+          <span class="dot"></span><span>${blogReadTime(p.body)}</span>
+          <span class="dot"></span><span class="art-views" id="artViews">${ART_EYE} …</span></div>
         ${p.cover?`<div class="art-cover"><img src="${esc(p.cover)}" alt="${esc(p.title)}" onerror="this.closest('.art-cover').remove()"/></div>`:''}
         <div class="art-body dropcap">${renderPostBody(p.body)||'<p>لا يوجد محتوى.</p>'}</div>
+        <div class="art-actions">
+          <button class="art-like" id="artLike" type="button" aria-label="إعجاب">${ART_HEART}<span class="al-count">0</span></button>
+          <button class="art-share" id="artShare" type="button">${ART_SHARE}<span>مشاركة</span></button>
+        </div>
+        <section class="art-comments">
+          <h3 class="ac-h">التعليقات <span id="acCount"></span></h3>
+          ${currentUser
+            ? `<div class="ac-form"><textarea id="acText" rows="3" maxlength="1500" placeholder="اكتب تعليقك…"></textarea>
+                <button class="btn primary" id="acPost" type="button">أضف تعليق</button></div>`
+            : `<div class="ac-login">سجّل الدخول لإضافة تعليق. <a href="${urlLogin()}">تسجيل الدخول</a></div>`}
+          <div class="ac-list" id="acList"><div class="ac-empty">جارٍ تحميل التعليقات…</div></div>
+        </section>
         <div class="elg-ad" data-ad="article"></div>
         ${more}
       </div></div>`;
     $('#app').querySelector('.art-back').onclick=()=>renderBlogIndex(id,d);
     $('#app').querySelectorAll('[data-post]').forEach(el=>el.onclick=()=>renderArticle(id,d,+el.dataset.post));
+    $('#artLike').onclick=()=>toggleArtLike(id,idx);
+    $('#artShare').onclick=()=>shareArticle(id,idx);
+    if($('#acPost')) $('#acPost').onclick=()=>postComment(id,idx,d);
     if(window.elgFillAds) window.elgFillAds($('#app'));
+    try{ history.replaceState(null,'', pageUrl('blog.html','blog='+id+'&post='+idx)); }catch(e){}
+    loadArticleEngagement(id,idx);
+    loadComments(id,idx,d);
     window.scrollTo(0,0);
   }
 
@@ -2787,14 +2953,15 @@ const auth = getAuth(app);
   }
 
   /* ---------- blog explorer (public directory of every published blog) ---------- */
-  function exploreCard(b,base){
+  function exploreCard(b,base,top){
     const dz=blogDesign(b.design);
     const grad=`linear-gradient(135deg,${dz.accent},${dz.accent2})`;
     const cover=b.cover
       ? `<img src="${esc(b.cover)}" alt="${esc(b.title)}" loading="lazy" onerror="this.remove()"/>`
       : `<span class="xp-mono">${esc(initials(b.title||'م'))}</span>`;
     const date=b.updatedAt?new Date(b.updatedAt).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}):'';
-    return `<a class="xp-card" href="${urlBlogView(b.id)}">
+    return `<a class="xp-card${top?' xp-top':''}" href="${urlBlogView(b.id)}">
+      ${top?'<span class="xp-top-badge">🏆 الأعلى تقييمًا</span>':''}
       <div class="xp-cover" style="background:${grad}">${cover}
         <span class="xp-badge">${esc(dz.name)}</span>${b.locked?'<span class="xp-lk" title="محمية بكلمة مرور">🔒</span>':''}</div>
       <div class="xp-b">
@@ -2802,6 +2969,7 @@ const auth = getAuth(app);
         <div class="xp-sub">${esc(b.subtitle||'مدونة على elgoharyX')}</div>
         <div class="xp-meta"><span class="xp-av" style="background:${grad}">${esc(initials(b.author||'م'))}</span>
           <span>${esc(b.author||'كاتب')}</span><span class="dot"></span><span>${(b.count||0)} مقالة</span>
+          ${(+b.rCount)?`<span class="dot"></span><span class="xp-rate">${RSTAR} ${blogAvg(b).toFixed(1)} (${+b.rCount})</span>`:''}
           ${date?`<span class="dot"></span><span>${date}</span>`:''}</div>
       </div></a>`;
   }
@@ -2824,13 +2992,14 @@ const auth = getAuth(app);
     try{
       const s=await get(child(ref(db),'blogIndex'));
       let list = s.exists()? Object.entries(s.val()).map(([id,v])=>({id,...v})) : [];
-      list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+      // الأعلى تقييمًا يتصدّر، ثم الأحدث تحديثًا
+      list.sort((a,b)=> (blogScore(b)-blogScore(a)) || ((b.updatedAt||0)-(a.updatedAt||0)));
       const base=location.href.split('#')[0].split('?')[0];
       const listEl=$('#xpList'), countEl=$('#xpCount');
       const draw=(arr)=>{
         countEl.textContent = list.length ? (arr.length+' من '+list.length+' مدونة') : '';
         listEl.innerHTML = arr.length
-          ? `<div class="xp-grid">${arr.map(b=>exploreCard(b,base)).join('')}</div>`
+          ? `<div class="xp-grid">${arr.map((b,i)=>exploreCard(b,base, i===0 && (+b.rCount)>0)).join('')}</div>`
           : `<div class="xp-empty">${list.length?'لا توجد نتائج مطابقة لبحثك.':'لا توجد مدونات منشورة بعد — كن أول من ينشر مدونته!'}</div>`;
       };
       draw(list);

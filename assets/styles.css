@@ -2258,3 +2258,68 @@
     box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
   .video-wrap video{display:block;width:100%;height:auto;max-height:78vh;background:#04060c}
   @media(max-width:600px){ .video-wrap{border-radius:14px} }
+
+  /* ============ تقييم المدونات (⭐) ============ */
+  .star-row{display:inline-flex;gap:2px;vertical-align:middle}
+  .star-row .rs-star svg{width:15px;height:15px;fill:rgba(255,255,255,.18)}
+  .star-row .rs-star.on svg{fill:var(--gold-2)}
+  /* ودجت التقييم في صفحة المدونة */
+  .blog-rate{margin:20px 0}
+  .blog-rate .br-in{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;
+    border:1px solid var(--stroke);background:linear-gradient(180deg,var(--panel,#101d34),var(--bg-2,#0d1728))}
+  .blog-rate .br-label{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--txt)}
+  .blog-rate .br-stars{display:inline-flex;gap:4px}
+  .blog-rate .br-star{border:none;background:none;cursor:pointer;padding:2px;line-height:0}
+  .blog-rate .br-star svg{width:26px;height:26px;fill:rgba(255,255,255,.2);transition:fill .12s,transform .12s}
+  .blog-rate .br-star.on svg{fill:var(--gold-2)}
+  .blog-rate .br-star:hover svg{transform:scale(1.15)}
+  .blog-rate .br-info{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+  .blog-rate .br-info b{font-family:"Space Grotesk",sans-serif;font-size:20px;color:var(--gold-2)}
+  .blog-rate .br-mine{color:var(--gold-2);border:1px solid rgba(201,165,72,.4);border-radius:100px;padding:3px 10px;font-size:12px}
+  /* نجوم بطاقة الاستكشاف */
+  .xp-rate{display:inline-flex;align-items:center;gap:3px;color:var(--gold-2)}
+  .xp-rate svg{width:14px;height:14px;fill:var(--gold-2)}
+  /* شارة الأعلى تقييمًا */
+  .xp-card.xp-top{border-color:rgba(201,165,72,.5);box-shadow:0 0 0 1px rgba(201,165,72,.25),0 18px 40px -24px rgba(0,0,0,.7)}
+  .xp-top-badge{position:absolute;top:10px;inset-inline-start:10px;z-index:3;font-family:"Space Grotesk",sans-serif;
+    font-size:11px;font-weight:700;color:#1a1300;background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    padding:5px 11px;border-radius:100px;box-shadow:0 6px 16px -6px rgba(201,165,72,.8)}
+
+  /* ============ تفاعل المقالات (مشاهدات + إعجاب + مشاركة) ============ */
+  .art-views{display:inline-flex;align-items:center;gap:4px}
+  .art-views svg{width:15px;height:15px}
+  .art-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:26px 0;padding-top:20px;
+    border-top:1px solid var(--stroke,rgba(210,222,245,.14))}
+  .art-actions button{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-family:inherit;font-weight:600;
+    font-size:14px;padding:10px 18px;border-radius:100px;border:1px solid var(--stroke,rgba(210,222,245,.14));
+    background:transparent;color:var(--muted,#9fabc6);transition:.18s}
+  .art-actions button:hover{color:var(--txt,#eef2fb);border-color:var(--gold-2,#e6c980)}
+  .art-actions button svg{width:20px;height:20px}
+  .art-like.on{color:#ff5e7a;border-color:rgba(255,94,122,.5);background:rgba(255,94,122,.08)}
+  .art-like.on svg{fill:#ff5e7a;stroke:#ff5e7a}
+  .art-like:active svg{transform:scale(1.25);transition:transform .12s}
+  .art-like .al-count{font-family:"Space Grotesk",sans-serif;min-width:12px}
+
+  /* ============ تعليقات المقالات ============ */
+  .art-comments{margin:30px 0 8px}
+  .art-comments .ac-h{font-family:"Cormorant Garamond",serif;font-size:24px;margin-bottom:16px;color:var(--txt)}
+  .art-comments .ac-h span{color:var(--muted);font-size:16px}
+  .ac-form{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+  .ac-form textarea{width:100%;resize:vertical;min-height:76px;padding:13px 15px;border-radius:12px;
+    border:1px solid var(--stroke);background:rgba(255,255,255,.03);color:var(--txt);font-family:inherit;font-size:14.5px;line-height:1.7}
+  .ac-form textarea:focus{outline:none;border-color:var(--gold-2)}
+  .ac-form .btn{align-self:flex-start;width:auto;padding:11px 26px}
+  .ac-login{margin-bottom:22px;padding:14px 16px;border:1px dashed var(--stroke);border-radius:12px;color:var(--muted);font-size:14px}
+  .ac-login a{color:var(--gold-2);font-weight:600}
+  .ac-list{display:flex;flex-direction:column;gap:14px}
+  .ac-empty{color:var(--muted-2);font-size:14px;padding:12px 0}
+  .ac-item{display:flex;gap:12px;padding:15px 16px;border:1px solid var(--stroke);border-radius:14px;background:rgba(255,255,255,.02)}
+  .ac-item .ac-av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:700;
+    font-family:"Space Grotesk",sans-serif;font-size:14px;color:#1a1300;background:linear-gradient(135deg,var(--gold),var(--gold-2))}
+  .ac-item .ac-main{flex:1;min-width:0}
+  .ac-item .ac-top{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+  .ac-item .ac-top b{font-size:14px;color:var(--txt)}
+  .ac-item .ac-date{color:var(--muted-2);font-size:12px}
+  .ac-item .ac-del{margin-inline-start:auto;background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:12.5px;padding:2px 6px;border-radius:6px}
+  .ac-item .ac-del:hover{color:#e0687a;background:rgba(224,104,122,.1)}
+  .ac-item .ac-tx{color:var(--muted);font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
