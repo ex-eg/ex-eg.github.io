@@ -3,7 +3,7 @@
    then refreshes the cache in the background. This prevents the long "hang" that
    network-first caused when the network stalled. Firebase / cross-origin traffic
    is never intercepted, so live data always comes fresh from the database. */
-const CACHE = 'elgoharyx-v24';
+const CACHE = 'elgoharyx-v26';
 const CORE = ['./', './index.html', './assets/styles.css', './assets/app.js', './assets/fx.js', './assets/pwa.js', './assets/ads.js', './assets/promo.js', './assets/i18n.js', './explore.html'];
 
 self.addEventListener('install', e => {

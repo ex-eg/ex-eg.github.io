@@ -69,11 +69,11 @@
 <body>
   <header class="appbar">
     <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="mark"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></span>
-      Academic Profiles <span class="ar">· منشئ البروفايلات</span></a>
+      Academic Profiles <span class="ar" data-en="· Profile Builder">· منشئ البروفايلات</span></a>
     <div class="ab-right">
       <a class="btn ghost" href="explore.html" style="padding:9px 15px;font-size:13px" data-en="Explore Blogs">استكشف المدونات</a>
       <a class="btn ghost" href="create-profile.html" style="padding:9px 15px;font-size:13px" data-en="Create Profile">أنشئ بروفايل</a>
-      <a class="btn ghost" id="acctLink" href="login.html" style="padding:9px 16px;font-size:13px">تسجيل الدخول</a>
+      <a class="btn ghost" id="acctLink" href="login.html" style="padding:9px 16px;font-size:13px" data-en="Log in">تسجيل الدخول</a>
     </div>
     <button class="lang-toggle" data-lang-toggle aria-label="Switch language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg><span class="lt-label">English</span></button>
   </header>
@@ -101,10 +101,10 @@
     <img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX logo" />
     <span>© 2026 <b>elgoharyX</b> — <span data-en="All rights reserved">جميع الحقوق محفوظة</span> · <a href="privacy.html" style="color:var(--gold-2)" data-en="Privacy">الخصوصية</a> · <a href="support.html" style="color:var(--gold-2)" data-en="Support">الدعم</a> · <a href="about.html" style="color:var(--gold-2)" data-en="About">عن الموقع</a></span>
   </footer>
-  <div class="toast" id="toast">تم النسخ ✓</div>
+  <div class="toast" id="toast" data-en="Copied ✓">تم النسخ ✓</div>
   <script>
     try{ if(localStorage.getItem('apb_mode')==='light') document.documentElement.setAttribute('data-mode','light'); }catch(e){}
-    try{ if(localStorage.getItem('apb_session_uid')){ var a=document.getElementById('acctLink'); if(a){ a.textContent='حسابي'; a.href='my-profiles.html'; } } }catch(e){}
+    try{ if(localStorage.getItem('apb_session_uid')){ var a=document.getElementById('acctLink'); if(a){ a.setAttribute('data-ar','حسابي'); a.setAttribute('data-en','My account'); a.textContent=(localStorage.getItem('apb_lang')==='en'?'My account':'حسابي'); a.href='my-profiles.html'; } } }catch(e){}
   </script>
   <script src="assets/fx.js"></script>
   <script src="assets/pwa.js"></script>
