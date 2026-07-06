@@ -9,6 +9,11 @@
   var LOGO = 'https://i.ibb.co/1t1TCvH7/103777.png';
   var DISMISS_KEY = 'apb_pwa_dismissed';
 
+  // pick the active language (saved choice, else device language) for banner text
+  function _en(){ try { var l = localStorage.getItem('apb_lang'); if (l === 'en') return true; if (l === 'ar') return false;
+    var d = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase(); return d.indexOf('ar') !== 0; } catch (e) { return false; } }
+  function L(ar, en){ return _en() ? en : ar; }
+
   // Register the service worker (enables offline + installability).
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
@@ -42,8 +47,8 @@
     el.innerHTML =
       '<img class="pwa-logo" src="' + LOGO + '" alt="elgoharyX"/>' +
       '<div class="pwa-txt">' + bodyHTML + '</div>' +
-      (withInstallBtn ? '<button class="pwa-install" id="pwaInstall">تثبيت</button>' : '') +
-      '<button class="pwa-x" id="pwaClose" aria-label="إغلاق">&times;</button>';
+      (withInstallBtn ? '<button class="pwa-install" id="pwaInstall">' + L('تثبيت', 'Install') + '</button>' : '') +
+      '<button class="pwa-x" id="pwaClose" aria-label="' + L('إغلاق', 'Close') + '">&times;</button>';
     document.body.appendChild(el);
     // animate in on next frame
     requestAnimationFrame(function () { el.classList.add('show'); });
@@ -67,17 +72,17 @@
 
   // Public install trigger — wired to any [data-install] button on any page.
   function triggerInstall() {
-    if (isStandalone) { toastMsg('التطبيق مثبّت بالفعل ✓'); return; }
+    if (isStandalone) { toastMsg(L('التطبيق مثبّت بالفعل ✓', 'The app is already installed ✓')); return; }
     if (deferredPrompt) {
       deferredPrompt.prompt();
       deferredPrompt.userChoice.finally(function () { deferredPrompt = null; document.body.classList.remove('can-install'); });
       return;
     }
     if (isIOS) {
-      buildBanner('<b>ثبّت على الآيفون</b><span>اضغط زر المشاركة <span class="pwa-ico">&#x2191;</span> ثم اختر «إضافة إلى الشاشة الرئيسية».</span>', false);
+      buildBanner(L('<b>ثبّت على الآيفون</b><span>اضغط زر المشاركة <span class="pwa-ico">&#x2191;</span> ثم اختر «إضافة إلى الشاشة الرئيسية».</span>', '<b>Install on iPhone</b><span>Tap the Share button <span class="pwa-ico">&#x2191;</span> then choose “Add to Home Screen”.</span>'), false);
       return;
     }
-    buildBanner('<b>تثبيت التطبيق</b><span>افتح قائمة المتصفح ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</span>', false);
+    buildBanner(L('<b>تثبيت التطبيق</b><span>افتح قائمة المتصفح ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</span>', '<b>Install the app</b><span>Open your browser menu, then choose “Install app” or “Add to Home Screen”.</span>'), false);
   }
   window.elgoInstall = triggerInstall;
   document.addEventListener('click', function (e) {
@@ -96,7 +101,7 @@
     if (document.body) document.body.classList.add('can-install');
     if (isStandalone || dismissed()) return;
     var b = buildBanner(
-      '<b>ثبّت التطبيق على جهازك</b><span>للوصول السريع والعمل دون اتصال — دون متجر تطبيقات.</span>',
+      L('<b>ثبّت التطبيق على جهازك</b><span>للوصول السريع والعمل دون اتصال — دون متجر تطبيقات.</span>', '<b>Install the app on your device</b><span>For quick access and offline use — no app store needed.</span>'),
       true
     );
     if (!b) return;
@@ -119,8 +124,10 @@
     if (isIOS && !isStandalone && !dismissed()) {
       setTimeout(function () {
         buildBanner(
-          '<b>ثبّت التطبيق على الآيفون</b>' +
+          L('<b>ثبّت التطبيق على الآيفون</b>' +
           '<span>اضغط زر المشاركة <span class="pwa-ico">&#x2191;</span> ثم اختر «إضافة إلى الشاشة الرئيسية».</span>',
+            '<b>Install the app on iPhone</b>' +
+          '<span>Tap the Share button <span class="pwa-ico">&#x2191;</span> then choose “Add to Home Screen”.</span>'),
           false
         );
       }, 1800);

@@ -101,19 +101,27 @@
 
   function show() {
     if (document.getElementById('cookieBar') || !document.body) return;
+    var en = false;
+    try { var l = localStorage.getItem('apb_lang');
+      if (l === 'en') en = true; else if (l !== 'ar') {
+        var d = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+        en = d.indexOf('ar') !== 0; }
+    } catch (e) {}
     var bar = document.createElement('div');
     bar.className = 'cookie-bar';
     bar.id = 'cookieBar';
     bar.setAttribute('role', 'dialog');
-    bar.setAttribute('aria-label', 'إشعار ملفات تعريف الارتباط');
+    bar.setAttribute('aria-label', en ? 'Cookie notice' : 'إشعار ملفات تعريف الارتباط');
     bar.innerHTML =
       '<div class="ck-in">' +
         '<span class="ck-ic">' + COOKIE_IC + '</span>' +
-        '<div class="ck-tx">يستخدم <b>elgoharyX</b> ملفات تعريف الارتباط (الكوكيز) لحفظ جلسة دخولك وتفضيلاتك، ولعرض الإعلانات عبر <b>Google</b> وشركائها. بالضغط على «موافق» فإنك توافق على استخدامها. ' +
-          '<a href="privacy.html">سياسة الخصوصية</a></div>' +
+        '<div class="ck-tx">' + (en
+          ? '<b>elgoharyX</b> uses cookies to save your login session and preferences, and to show ads via <b>Google</b> and its partners. By clicking “Accept” you agree to their use. '
+          : 'يستخدم <b>elgoharyX</b> ملفات تعريف الارتباط (الكوكيز) لحفظ جلسة دخولك وتفضيلاتك، ولعرض الإعلانات عبر <b>Google</b> وشركائها. بالضغط على «موافق» فإنك توافق على استخدامها. ') +
+          '<a href="privacy.html">' + (en ? 'Privacy Policy' : 'سياسة الخصوصية') + '</a></div>' +
         '<div class="ck-acts">' +
-          '<button class="ck-btn ok" id="ckAccept">موافق</button>' +
-          '<button class="ck-btn gh" id="ckDecline">رفض</button>' +
+          '<button class="ck-btn ok" id="ckAccept">' + (en ? 'Accept' : 'موافق') + '</button>' +
+          '<button class="ck-btn gh" id="ckDecline">' + (en ? 'Decline' : 'رفض') + '</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(bar);

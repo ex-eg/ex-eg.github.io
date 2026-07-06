@@ -25,7 +25,7 @@
       home:    '0000000000'  // الصفحة الرئيسية
     },
 
-    label: 'إعلان',        // الكلمة التي تظهر فوق كل إعلان
+    label: (function(){ try{ var l=localStorage.getItem('apb_lang'); if(l==='en') return 'Ad'; if(l==='ar') return 'إعلان'; return /^ar/i.test((navigator.language||''))?'إعلان':'Ad'; }catch(e){ return 'إعلان'; } })(),        // الكلمة التي تظهر فوق كل إعلان
     respectPremium: true   // إخفاء الإعلانات عن المشتركين المميّزين
   };
 

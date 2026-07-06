@@ -40,17 +40,23 @@
 
   function show() {
     if (document.getElementById('promoPop')) return;
+    var en = false;
+    try { var l = localStorage.getItem('apb_lang');
+      if (l === 'en') en = true; else if (l !== 'ar') {
+        var d = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+        en = d.indexOf('ar') !== 0; }
+    } catch (e) {}
     var box = document.createElement('div');
     box.id = 'promoPop';
     box.className = 'promo-pop';
     box.setAttribute('role', 'dialog');
     box.innerHTML =
-      '<button class="promo-x" aria-label="إغلاق">&times;</button>' +
+      '<button class="promo-x" aria-label="' + (en ? 'Close' : 'إغلاق') + '">&times;</button>' +
       '<div class="promo-ic">' + CROWN + '</div>' +
       '<div class="promo-body">' +
-        '<b>افتح كل المزايا</b>' +
-        '<span>بلا إعلانات نهائيًا، حوّل مدونتك إلى تطبيق، شارة مميّزة، والمزيد.</span>' +
-        '<a class="promo-cta" href="' + base + 'premium.html">اشترك الآن</a>' +
+        '<b>' + (en ? 'Unlock all features' : 'افتح كل المزايا') + '</b>' +
+        '<span>' + (en ? 'No ads at all, turn your blog into an app, a premium badge, and more.' : 'بلا إعلانات نهائيًا، حوّل مدونتك إلى تطبيق، شارة مميّزة، والمزيد.') + '</span>' +
+        '<a class="promo-cta" href="' + base + 'premium.html">' + (en ? 'Subscribe now' : 'اشترك الآن') + '</a>' +
       '</div>';
     document.body.appendChild(box);
     // slide-in
