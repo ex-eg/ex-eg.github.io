@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="mobile-web-app-capable" content="yes" />
-<title>elgoharyX — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية</title>
+<title data-en="Academic Profiles — Academic Profile &amp; Online Blog Builder">Academic Profiles — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية</title>
 <script>
 /* backward compatibility: old single-page links used ?id= / ?blog= on the root. */
 (function(){try{var p=new URLSearchParams(location.search),m;
@@ -27,9 +27,9 @@
 <link rel="apple-touch-icon" href="https://i.ibb.co/1t1TCvH7/103777.png" />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="elgoharyX" />
+<meta property="og:site_name" content="Academic Profiles" />
 <meta property="og:locale" content="ar_AR" />
-<meta property="og:title" content="elgoharyX — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية" />
+<meta property="og:title" content="Academic Profiles — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية" />
 <meta property="og:description" content="أنشئ بروفايلك الأكاديمي ومدونتك الإلكترونية مجاناً على elgoharyX وشاركهما برابط دائم." />
 <meta property="og:url" content="https://ex-eg.github.io/" />
 <meta property="og:image" content="https://i.ibb.co/1t1TCvH7/103777.png" />
@@ -41,7 +41,7 @@
 {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "WebSite", "name": "elgoharyX", "alternateName": ["الجوهري إكس", "elgohary", "el goharyx"], "url": "https://ex-eg.github.io/", "inLanguage": "ar", "description": "منصّة عربية لإنشاء بروفايل أكاديمي ومدونة إلكترونية ومشاركتهما برابط دائم." },
+    { "@type": "WebSite", "name": "Academic Profiles", "alternateName": ["elgoharyX", "البروفايلات الأكاديمية", "الجوهري إكس", "elgohary", "el goharyx"], "url": "https://ex-eg.github.io/", "inLanguage": "ar", "description": "منصّة عربية لإنشاء بروفايل أكاديمي ومدونة إلكترونية ومشاركتهما برابط دائم." },
     { "@type": "Organization", "name": "elgoharyX", "url": "https://ex-eg.github.io/", "logo": "https://i.ibb.co/1t1TCvH7/103777.png" },
     { "@type": "WebApplication", "name": "elgoharyX", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "inLanguage": "ar", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" } },
     { "@type": "FAQPage", "mainEntity": [
@@ -394,12 +394,12 @@
       document.addEventListener('keydown',function(e){ if(e.key==='Escape') hd.classList.remove('open'); });
     })();
     (function(){
-      var grads=[['#0f2a5e','#264f96','رويال'],['#1a1140','#4b1c7a','أورورا'],['#06301f','#1aa564','زمرّد'],
-        ['#5e0f1a','#c8384a','قرمزي'],['#7a4b12','#e6c980','ذهبي'],['#12324a','#3f74c9','محيط'],
-        ['#2a1145','#8a4bd6','بنفسجي'],['#0d3b34','#2bb0a0','نعناع'],['#3a1020','#d0567f','وردي'],['#1c2540','#6b7bb0','رمادي']];
+      var grads=[['#0f2a5e','#264f96','رويال','Royal'],['#1a1140','#4b1c7a','أورورا','Aurora'],['#06301f','#1aa564','زمرّد','Emerald'],
+        ['#5e0f1a','#c8384a','قرمزي','Crimson'],['#7a4b12','#e6c980','ذهبي','Gold'],['#12324a','#3f74c9','محيط','Ocean'],
+        ['#2a1145','#8a4bd6','بنفسجي','Violet'],['#0d3b34','#2bb0a0','نعناع','Mint'],['#3a1020','#d0567f','وردي','Rose'],['#1c2540','#6b7bb0','رمادي','Slate']];
       var t=document.getElementById('swTrack'); if(!t) return; var html='';
       for(var r=0;r<2;r++){ for(var i=0;i<grads.length;i++){ var g=grads[i];
-        html+='<div class="sw" style="background:linear-gradient(135deg,'+g[0]+','+g[1]+')"><b>'+g[2]+'</b></div>'; } }
+        html+='<div class="sw" style="background:linear-gradient(135deg,'+g[0]+','+g[1]+')"><b data-en="'+g[3]+'">'+g[2]+'</b></div>'; } }
       t.innerHTML=html;
     })();
   </script>
