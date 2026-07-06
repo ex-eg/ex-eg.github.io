@@ -2323,3 +2323,11 @@
   .ac-item .ac-del{margin-inline-start:auto;background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:12.5px;padding:2px 6px;border-radius:6px}
   .ac-item .ac-del:hover{color:#e0687a;background:rgba(224,104,122,.1)}
   .ac-item .ac-tx{color:var(--muted);font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+
+  /* ============ زر تغيير اللغة ============ */
+  .lang-toggle{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-family:"Space Grotesk",sans-serif;
+    font-size:13px;font-weight:600;color:var(--muted);background:color-mix(in srgb,var(--txt) 4%,transparent);
+    border:1px solid var(--stroke);border-radius:100px;padding:8px 14px;transition:.18s;line-height:1}
+  .lang-toggle:hover{color:var(--txt);border-color:var(--gold-2)}
+  .lang-toggle svg{width:17px;height:17px}
+  html[dir="ltr"] .lang-toggle .lt-label,html[dir="ltr"] body{letter-spacing:0}

@@ -42,6 +42,18 @@ const auth = getAuth(app);
      folder's URL, and the helpers below build canonical cross-page links. */
   const ROOT = location.origin + location.pathname.replace(/[^/]*$/, '');
   const PAGE = (document.body && document.body.dataset.page) || '';
+  /* ---------- i18n: bilingual helper (Arabic default / English) ----------
+     t('عربي','English') returns the string in the active language. Language is
+     resolved from i18n.js if present, else localStorage, else the device language. */
+  function curLang(){
+    try{
+      if(window.elgGetLang) return window.elgGetLang();
+      var s=localStorage.getItem('apb_lang'); if(s==='en'||s==='ar') return s;
+      var l=((navigator.languages&&navigator.languages[0])||navigator.language||'').toLowerCase();
+      return l.indexOf('ar')===0?'ar':'en';
+    }catch(e){ return 'ar'; }
+  }
+  const t = (ar, en) => (en != null && curLang() === 'en') ? en : ar;
   const pageUrl = (file, qs) => ROOT + file + (qs ? ('?' + qs) : '');
   const urlHome        = ()  => ROOT;
   const urlExplore     = ()  => pageUrl('explore.html');
@@ -758,28 +770,29 @@ const auth = getAuth(app);
   const skelGrid=(n=6)=>`<div class="skel-grid">${Array.from({length:n},skelCard).join('')}</div>`;
   function appbar(active){
     const right = currentUser ? `
-        <button class="btn ghost ab-only" data-act="mode" title="الوضع" style="padding:9px 12px">${modeIcon()}</button>
+        <button class="btn ghost ab-only" data-act="mode" title="${t('الوضع','Theme')}" style="padding:9px 12px">${modeIcon()}</button>
         <div class="ab-nav">
-          <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">استكشف</a>
-          <a class="btn ghost" href="${urlMyProfiles()}" style="padding:9px 15px;font-size:13px${active==='mine'?';border-color:var(--gold);color:var(--txt)':''}">بروفايلاتي</a>
-          <a class="btn ghost" href="${urlMyBlog()}" style="padding:9px 15px;font-size:13px${active==='blogs'?';border-color:var(--gold);color:var(--txt)':''}">مدونتي</a>
-          <a class="btn ghost" href="${urlNewProfile()}" style="padding:9px 15px;font-size:13px">+ بروفايل</a>
-          <a class="btn ghost" href="${urlNewBlog()}" style="padding:9px 15px;font-size:13px">+ مدونة</a>
-          <a class="btn ghost ab-vip" href="${pageUrl('premium.html')}" style="padding:9px 14px;font-size:13px${active==='premium'?';border-color:var(--gold);color:var(--txt)':''}">${CROWN}<span>مميز</span></a>
-          ${isAdmin()?`<a class="btn ghost" href="${pageUrl('admin.html')}" style="padding:9px 13px;font-size:13px${active==='admin'?';border-color:var(--gold);color:var(--txt)':''}">الأدمن</a>`:''}
-          <button class="btn ghost" data-act="logout" style="padding:9px 13px;font-size:13px">خروج</button>
+          <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">${t('استكشف','Explore')}</a>
+          <a class="btn ghost" href="${urlMyProfiles()}" style="padding:9px 15px;font-size:13px${active==='mine'?';border-color:var(--gold);color:var(--txt)':''}">${t('بروفايلاتي','My Profiles')}</a>
+          <a class="btn ghost" href="${urlMyBlog()}" style="padding:9px 15px;font-size:13px${active==='blogs'?';border-color:var(--gold);color:var(--txt)':''}">${t('مدونتي','My Blog')}</a>
+          <a class="btn ghost" href="${urlNewProfile()}" style="padding:9px 15px;font-size:13px">${t('+ بروفايل','+ Profile')}</a>
+          <a class="btn ghost" href="${urlNewBlog()}" style="padding:9px 15px;font-size:13px">${t('+ مدونة','+ Blog')}</a>
+          <a class="btn ghost ab-vip" href="${pageUrl('premium.html')}" style="padding:9px 14px;font-size:13px${active==='premium'?';border-color:var(--gold);color:var(--txt)':''}">${CROWN}<span>${t('مميز','Premium')}</span></a>
+          ${isAdmin()?`<a class="btn ghost" href="${pageUrl('admin.html')}" style="padding:9px 13px;font-size:13px${active==='admin'?';border-color:var(--gold);color:var(--txt)':''}">${t('الأدمن','Admin')}</a>`:''}
+          <button class="btn ghost" data-act="logout" style="padding:9px 13px;font-size:13px">${t('خروج','Log out')}</button>
         </div>
-        <button class="btn ghost ab-bell" data-act="bell" title="الإشعارات" style="padding:9px 12px;position:relative">${BELL}<span class="bell-dot" id="bellDot" hidden></span></button>
-        <a class="user-chip" href="${pageUrl('account.html')}" title="الملف الشخصي">${userAvatar('avatar-sm')}<span class="uc-name">${esc(currentUser.username)}</span></a>
-        <button class="ab-burger" data-act="menu" aria-label="القائمة">${TAB.burger}</button>`
-      : `<button class="btn ghost" data-act="mode" title="الوضع" style="padding:9px 12px">${modeIcon()}</button>
-         <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">استكشف المدونات</a>
-         <a class="btn ghost" href="${urlLogin()}" style="padding:9px 16px;font-size:13px">تسجيل الدخول</a>`;
+        <button class="btn ghost ab-bell" data-act="bell" title="${t('الإشعارات','Notifications')}" style="padding:9px 12px;position:relative">${BELL}<span class="bell-dot" id="bellDot" hidden></span></button>
+        <a class="user-chip" href="${pageUrl('account.html')}" title="${t('الملف الشخصي','Profile')}">${userAvatar('avatar-sm')}<span class="uc-name">${esc(currentUser.username)}</span></a>
+        <button class="ab-burger" data-act="menu" aria-label="${t('القائمة','Menu')}">${TAB.burger}</button>`
+      : `<button class="btn ghost" data-act="mode" title="${t('الوضع','Theme')}" style="padding:9px 12px">${modeIcon()}</button>
+         <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">${t('استكشف المدونات','Explore Blogs')}</a>
+         <a class="btn ghost" href="${urlLogin()}" style="padding:9px 16px;font-size:13px">${t('تسجيل الدخول','Log in')}</a>`;
     const premiumCls = (currentUser && currentUser.premium) ? ' ab-premium' : '';
+    const langBtn = `<button class="lang-toggle ab-lang" data-act="lang" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg><span class="lt-label"></span></button>`;
     return `<div class="appbar${premiumCls}">
       <a class="brand" href="${urlHome()}" style="text-decoration:none;color:inherit"><span class="mark"><img src="${LOGO}" alt="elgoharyX"/></span>
-        Academic Profiles <span class="ar">· منشئ البروفايلات</span></a>
-      <div class="ab-right">${right}</div>
+        Academic Profiles <span class="ar" data-en="· Profile Builder">· منشئ البروفايلات</span></a>
+      <div class="ab-right">${langBtn}${right}</div>
     </div>`;
   }
   /* professional slide-in side menu (mobile) */
@@ -905,6 +918,15 @@ const auth = getAuth(app);
     document.querySelectorAll('[data-act="menu-close"]').forEach(b=>b.onclick=()=>{ if(dw) dw.classList.remove('open'); });
     // notifications bell (announcements + subscribe)
     document.querySelectorAll('[data-act="bell"]').forEach(b=>b.onclick=openNotifications);
+    // language toggle (Arabic / English) — flips language then re-renders the page
+    document.querySelectorAll('[data-act="lang"]').forEach(b=>{
+      const lbl=b.querySelector('.lt-label'); if(lbl) lbl.textContent = curLang()==='en'?'العربية':'English';
+      b.onclick=()=>{ const n = curLang()==='en'?'ar':'en';
+        if(window.elgSetLang) window.elgSetLang(n);
+        else { try{ localStorage.setItem('apb_lang', n); }catch(e){} document.documentElement.setAttribute('dir', n==='en'?'ltr':'rtl'); document.documentElement.setAttribute('lang', n); }
+        route();
+      };
+    });
     if(currentUser) refreshBell();
   }
 
@@ -2959,29 +2981,29 @@ const auth = getAuth(app);
     const cover=b.cover
       ? `<img src="${esc(b.cover)}" alt="${esc(b.title)}" loading="lazy" onerror="this.remove()"/>`
       : `<span class="xp-mono">${esc(initials(b.title||'م'))}</span>`;
-    const date=b.updatedAt?new Date(b.updatedAt).toLocaleDateString('ar-EG',{year:'numeric',month:'short',day:'numeric'}):'';
+    const date=b.updatedAt?new Date(b.updatedAt).toLocaleDateString(curLang()==='en'?'en-US':'ar-EG',{year:'numeric',month:'short',day:'numeric'}):'';
     return `<a class="xp-card${top?' xp-top':''}" href="${urlBlogView(b.id)}">
-      ${top?'<span class="xp-top-badge">🏆 الأعلى تقييمًا</span>':''}
+      ${top?`<span class="xp-top-badge">${t('🏆 الأعلى تقييمًا','🏆 Top Rated')}</span>`:''}
       <div class="xp-cover" style="background:${grad}">${cover}
-        <span class="xp-badge">${esc(dz.name)}</span>${b.locked?'<span class="xp-lk" title="محمية بكلمة مرور">🔒</span>':''}</div>
+        <span class="xp-badge">${esc(dz.name)}</span>${b.locked?`<span class="xp-lk" title="${t('محمية بكلمة مرور','Password protected')}">🔒</span>`:''}</div>
       <div class="xp-b">
-        <div class="xp-title">${esc(b.title||'مدونة بدون عنوان')}</div>
-        <div class="xp-sub">${esc(b.subtitle||'مدونة على elgoharyX')}</div>
+        <div class="xp-title">${esc(b.title||t('مدونة بدون عنوان','Untitled blog'))}</div>
+        <div class="xp-sub">${esc(b.subtitle||t('مدونة على elgoharyX','A blog on elgoharyX'))}</div>
         <div class="xp-meta"><span class="xp-av" style="background:${grad}">${esc(initials(b.author||'م'))}</span>
-          <span>${esc(b.author||'كاتب')}</span><span class="dot"></span><span>${(b.count||0)} مقالة</span>
+          <span>${esc(b.author||t('كاتب','Author'))}</span><span class="dot"></span><span>${(b.count||0)} ${t('مقالة','articles')}</span>
           ${(+b.rCount)?`<span class="dot"></span><span class="xp-rate">${RSTAR} ${blogAvg(b).toFixed(1)} (${+b.rCount})</span>`:''}
           ${date?`<span class="dot"></span><span>${date}</span>`:''}</div>
       </div></a>`;
   }
   async function showExplore(){
-    document.title='استكشف المدونات — elgoharyX';
+    document.title=t('استكشف المدونات — elgoharyX','Explore Blogs — elgoharyX');
     document.body.style.background='';
     $('#app').innerHTML = appbar('explore') + `
       <section class="xp-hero"><div class="xp-hero-in">
-        <span class="xp-kick">✦ مكتبة المدونات</span>
-        <h1>استكشف المدونات</h1>
-        <p>تصفّح كل المدونات المنشورة على elgoharyX — اقرأ مقالات في التقنية والثقافة والتطوير، واستلهم لإنشاء مدونتك الخاصة.</p>
-        <div class="xp-search"><input id="xpSearch" placeholder="ابحث بعنوان المدونة أو اسم الكاتب…" autocomplete="off"/></div>
+        <span class="xp-kick">${t('✦ مكتبة المدونات','✦ Blog Library')}</span>
+        <h1>${t('استكشف المدونات','Explore Blogs')}</h1>
+        <p>${t('تصفّح كل المدونات المنشورة على elgoharyX — اقرأ مقالات في التقنية والثقافة والتطوير، واستلهم لإنشاء مدونتك الخاصة.','Browse every blog published on elgoharyX — read articles on tech, culture, and self-development, and get inspired to create your own.')}</p>
+        <div class="xp-search"><input id="xpSearch" placeholder="${t('ابحث بعنوان المدونة أو اسم الكاتب…','Search by blog title or author name…')}" autocomplete="off"/></div>
       </div></section>
       <div class="wrap">
         <div class="xp-count" id="xpCount"></div>
@@ -2997,10 +3019,10 @@ const auth = getAuth(app);
       const base=location.href.split('#')[0].split('?')[0];
       const listEl=$('#xpList'), countEl=$('#xpCount');
       const draw=(arr)=>{
-        countEl.textContent = list.length ? (arr.length+' من '+list.length+' مدونة') : '';
+        countEl.textContent = list.length ? (curLang()==='en' ? (arr.length+' of '+list.length+' blogs') : (arr.length+' من '+list.length+' مدونة')) : '';
         listEl.innerHTML = arr.length
           ? `<div class="xp-grid">${arr.map((b,i)=>exploreCard(b,base, i===0 && (+b.rCount)>0)).join('')}</div>`
-          : `<div class="xp-empty">${list.length?'لا توجد نتائج مطابقة لبحثك.':'لا توجد مدونات منشورة بعد — كن أول من ينشر مدونته!'}</div>`;
+          : `<div class="xp-empty">${list.length?t('لا توجد نتائج مطابقة لبحثك.','No results match your search.'):t('لا توجد مدونات منشورة بعد — كن أول من ينشر مدونته!','No blogs published yet — be the first to publish yours!')}</div>`;
       };
       draw(list);
       if(window.elgFillAds) window.elgFillAds($('#app'));
@@ -3008,7 +3030,7 @@ const auth = getAuth(app);
         draw(!q?list:list.filter(b=>((b.title||'')+' '+(b.author||'')+' '+(b.subtitle||'')).toLowerCase().includes(q))); };
     }catch(e){
       console.error(e);
-      $('#xpList').innerHTML=`<div class="xp-empty">تعذّر تحميل المدونات. تحقّق من اتصالك أو من قواعد قاعدة البيانات.</div>`;
+      $('#xpList').innerHTML=`<div class="xp-empty">${t('تعذّر تحميل المدونات. تحقّق من اتصالك أو من قواعد قاعدة البيانات.','Failed to load blogs. Check your connection or the database rules.')}</div>`;
     }
   }
 
