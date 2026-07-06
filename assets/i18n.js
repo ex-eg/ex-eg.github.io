@@ -31,12 +31,13 @@
       if (!el.hasAttribute('data-ar')) el.setAttribute('data-ar', el.innerHTML);
       el.innerHTML = (lang === 'en') ? el.getAttribute('data-en') : el.getAttribute('data-ar');
     }
-    // نصّ الأزرار: يعرض اللغة الأخرى (التي سينتقل إليها)
+    // أيقونة اللغة: تعرض رمز اللغة الأخرى (التي سينتقل إليها) — EN أو ع
     var toggles = document.querySelectorAll('[data-lang-toggle]');
     for (var j = 0; j < toggles.length; j++){
       var lbl = toggles[j].querySelector('.lt-label');
-      if (lbl) lbl.textContent = (lang === 'en') ? 'العربية' : 'English';
+      if (lbl) lbl.textContent = (lang === 'en') ? 'ع' : 'EN';
       toggles[j].setAttribute('aria-label', (lang === 'en') ? 'التبديل إلى العربية' : 'Switch to English');
+      toggles[j].setAttribute('title', (lang === 'en') ? 'العربية' : 'English');
     }
   }
 

@@ -688,7 +688,7 @@ const auth = getAuth(app);
   function showPassGate(kind,id,rec,onUnlock){
     if(wasUnlocked(kind,id)){ onUnlock(); return; }
     document.body.style.background='';
-    document.title='محتوى محمي — elgoharyX';
+    document.title=t('محتوى محمي — elgoharyX','Protected Content — elgoharyX');
     $('#app').innerHTML=`
       <div class="lock-wrap"><div class="lock-card">
         <div class="lock-ic"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4"/></svg></div>
@@ -920,7 +920,8 @@ const auth = getAuth(app);
     document.querySelectorAll('[data-act="bell"]').forEach(b=>b.onclick=openNotifications);
     // language toggle (Arabic / English) — flips language then re-renders the page
     document.querySelectorAll('[data-act="lang"]').forEach(b=>{
-      const lbl=b.querySelector('.lt-label'); if(lbl) lbl.textContent = curLang()==='en'?'العربية':'English';
+      const lbl=b.querySelector('.lt-label'); if(lbl) lbl.textContent = curLang()==='en'?'ع':'EN';
+      b.setAttribute('title', curLang()==='en'?'العربية':'English');
       b.onclick=()=>{ const n = curLang()==='en'?'ar':'en';
         if(window.elgSetLang) window.elgSetLang(n);
         else { try{ localStorage.setItem('apb_lang', n); }catch(e){} document.documentElement.setAttribute('dir', n==='en'?'ltr':'rtl'); document.documentElement.setAttribute('lang', n); }
@@ -997,7 +998,7 @@ const auth = getAuth(app);
   }
 
   function showAuth(mode='login'){
-    document.title='تسجيل الدخول — منشئ البروفايلات';
+    document.title=t('تسجيل الدخول — منشئ البروفايلات','Log in — Academic Profiles');
     document.body.style.background='';
     $('#app').innerHTML = appbar('login') + `
     <div class="auth-wrap"><div class="panel auth-card">
@@ -1094,7 +1095,7 @@ const auth = getAuth(app);
   /* ---------- account / profile page (edit account + avatar) ---------- */
   async function showAccount(){
     if(!currentUser){ gotoLogin(); return; }
-    document.title='الملف الشخصي — elgoharyX';
+    document.title=t('الملف الشخصي — elgoharyX','Profile — elgoharyX');
     document.body.style.background='';
     let photo = currentUser.photo || '';
     const avatarInner=()=> photo
@@ -1174,7 +1175,7 @@ const auth = getAuth(app);
 
   async function showMyProfiles(){
     if(!currentUser){ showAuth('login'); return; }
-    document.title='بروفايلاتي — منشئ البروفايلات';
+    document.title=t('بروفايلاتي — منشئ البروفايلات','My Profiles — Academic Profiles');
     document.body.style.background='';
     $('#app').innerHTML = appbar('mine') + `<div class="wrap">
       <div class="mp-head">
@@ -1255,7 +1256,7 @@ const auth = getAuth(app);
     if(!currentUser){ showAuth('login'); return; }
     const editing = editingId!==null;
     const sharedEdit = editing && editMeta && editMeta.ownerUid!==currentUser.uid;
-    document.title = editing ? 'تعديل البروفايل' : 'منشئ البروفايلات الأكاديمية';
+    document.title = editing ? t('تعديل البروفايل','Edit Profile') : t('منشئ البروفايلات الأكاديمية','Academic Profile Builder');
     document.body.style.background='';
     $('#app').innerHTML = appbar('build') + `
     <div class="wrap"><div class="builder">
@@ -2059,7 +2060,7 @@ const auth = getAuth(app);
   function blogShell(d){
     const dz = blogDesign(d.design);
     document.body.style.background = dz.bg;
-    document.title = (d.title||'مدونة')+' — elgoharyX';
+    document.title = (d.title||t('مدونة','Blog'))+' — elgoharyX';
     setMeta('meta[name="description"]','content',(d.subtitle||d.about||'مدونة احترافية').slice(0,155));
     setMeta('meta[property="og:title"]','content',(d.title||'مدونة')+' | elgoharyX');
     setMeta('meta[property="og:image"]','content',d.cover||LOGO);
@@ -2180,11 +2181,11 @@ const auth = getAuth(app);
   function renderRatingWidget(el, id, avg, count, mine){
     const disp = mine || avg;
     el.innerHTML = `<div class="br-in">
-      <span class="br-label">قيّم هذه المدونة</span>
-      <div class="br-stars" role="group" aria-label="تقييم من 5 نجوم">
-        ${[1,2,3,4,5].map(n=>`<button type="button" class="br-star${n<=Math.round(disp)?' on':''}" data-star="${n}" aria-label="${n} من 5">${RSTAR}</button>`).join('')}
+      <span class="br-label">${t('قيّم هذه المدونة','Rate this blog')}</span>
+      <div class="br-stars" role="group" aria-label="${t('تقييم من 5 نجوم','Rate out of 5 stars')}">
+        ${[1,2,3,4,5].map(n=>`<button type="button" class="br-star${n<=Math.round(disp)?' on':''}" data-star="${n}" aria-label="${n}">${RSTAR}</button>`).join('')}
       </div>
-      <div class="br-info">${count?`<b>${avg.toFixed(1)}</b><span>من 5 · ${count} تقييم</span>`:`<span>كن أول من يقيّمها</span>`}${mine?`<span class="br-mine">تقييمك ${mine}★</span>`:''}</div>
+      <div class="br-info">${count?`<b>${avg.toFixed(1)}</b><span>${t('من 5 · '+count+' تقييم','of 5 · '+count+' ratings')}</span>`:`<span>${t('كن أول من يقيّمها','Be the first to rate it')}</span>`}${mine?`<span class="br-mine">${t('تقييمك '+mine+'★','You: '+mine+'★')}</span>`:''}</div>
     </div>`;
     const stars=el.querySelectorAll('.br-star');
     const paint=n=>stars.forEach(s=>s.classList.toggle('on', +s.dataset.star<=n));
@@ -2206,7 +2207,7 @@ const auth = getAuth(app);
   }
   async function rateBlog(id, val){
     const uid=getSession();
-    if(!uid){ toast('سجّل الدخول لتقييم المدونة'); return; }
+    if(!uid){ toast(t('سجّل الدخول لتقييم المدونة','Sign in to rate the blog')); return; }
     try{
       await set(ref(db,'blogRatings/'+id+'/'+uid), val);
       const s=await get(child(ref(db),'blogRatings/'+id));
@@ -2214,9 +2215,9 @@ const auth = getAuth(app);
       for(const k in votes){ const v=+votes[k]; if(v>=1&&v<=5){ sum+=v; count++; } }
       const idx=await get(child(ref(db),'blogIndex/'+id));
       if(idx.exists()) await update(ref(db,'blogIndex/'+id), { rSum:sum, rCount:count });
-      toast('شكراً لتقييمك ✓');
+      toast(t('شكراً لتقييمك ✓','Thanks for your rating ✓'));
       const el=$('#blogRate'); if(el) renderRatingWidget(el, id, count?sum/count:0, count, val);
-    }catch(e){ console.error(e); toast('تعذّر حفظ التقييم — تأكد من نشر قواعد قاعدة البيانات'); }
+    }catch(e){ console.error(e); toast(t('تعذّر حفظ التقييم — تأكد من نشر قواعد قاعدة البيانات','Could not save rating — make sure the database rules are published')); }
   }
 
   function renderBlogIndex(id,d){
@@ -2284,7 +2285,7 @@ const auth = getAuth(app);
   }
   async function toggleArtLike(id, idx){
     const uid=getSession();
-    if(!uid){ toast('سجّل الدخول للإعجاب بالمقال'); return; }
+    if(!uid){ toast(t('سجّل الدخول للإعجاب بالمقال','Sign in to like the article')); return; }
     const btn=$('#artLike'); if(!btn) return;
     const willLike=!btn.classList.contains('on');
     setLikeBtn(btn, (+btn.dataset.lc||0)+(willLike?1:-1), willLike);
@@ -2295,7 +2296,7 @@ const auth = getAuth(app);
   function shareArticle(id, idx){
     const url=pageUrl('blog.html','blog='+id+'&post='+idx);
     if(navigator.share){ navigator.share({title:document.title, url}).catch(()=>{}); }
-    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(()=>toast('تم نسخ رابط المقال ✓')); }
+    else if(navigator.clipboard){ navigator.clipboard.writeText(url).then(()=>toast(t('تم نسخ رابط المقال ✓','Article link copied ✓'))); }
     else toast(url);
   }
 
@@ -2305,8 +2306,8 @@ const auth = getAuth(app);
     return `<div class="ac-item" data-cid="${cid}">
       <span class="ac-av">${esc(initials(c.name||'؟'))}</span>
       <div class="ac-main">
-        <div class="ac-top"><b>${esc(c.name||'مستخدم')}</b><span class="ac-date">${cmtDate(c.at)}</span>
-          ${canDel?`<button class="ac-del" data-del="${cid}" type="button">حذف</button>`:''}</div>
+        <div class="ac-top"><b>${esc(c.name||t('مستخدم','User'))}</b><span class="ac-date">${cmtDate(c.at)}</span>
+          ${canDel?`<button class="ac-del" data-del="${cid}" type="button">${t('حذف','Delete')}</button>`:''}</div>
         <div class="ac-tx">${esc(c.text||'')}</div>
       </div></div>`;
   }
@@ -2321,43 +2322,43 @@ const auth = getAuth(app);
       if(cntEl) cntEl.textContent = arr.length?('('+arr.length+')'):'';
       listEl.innerHTML = arr.length
         ? arr.map(c=>commentHTML(c, c.cid, !!(uid && (c.uid===uid || uid===(d&&d.ownerUid))))).join('')
-        : `<div class="ac-empty">لا توجد تعليقات بعد — كن أول من يعلّق.</div>`;
+        : `<div class="ac-empty">${t('لا توجد تعليقات بعد — كن أول من يعلّق.','No comments yet — be the first to comment.')}</div>`;
       listEl.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>deleteComment(id,idx,b.dataset.del,d));
-    }catch(e){ console.warn('comments load failed', e); listEl.innerHTML=`<div class="ac-empty">تعذّر تحميل التعليقات — تأكد من نشر قواعد قاعدة البيانات.</div>`; }
+    }catch(e){ console.warn('comments load failed', e); listEl.innerHTML=`<div class="ac-empty">${t('تعذّر تحميل التعليقات — تأكد من نشر قواعد قاعدة البيانات.','Failed to load comments — make sure the database rules are published.')}</div>`; }
   }
   async function postComment(id, idx, d){
     const uid=getSession();
-    if(!uid){ toast('سجّل الدخول للتعليق'); return; }
+    if(!uid){ toast(t('سجّل الدخول للتعليق','Sign in to comment')); return; }
     const ta=$('#acText'); if(!ta) return;
     const text=(ta.value||'').trim();
-    if(text.length<1){ toast('اكتب تعليقًا أولاً'); return; }
-    if(text.length>1500){ toast('التعليق طويل جدًا (1500 حرف كحد أقصى)'); return; }
+    if(text.length<1){ toast(t('اكتب تعليقًا أولاً','Write a comment first')); return; }
+    if(text.length>1500){ toast(t('التعليق طويل جدًا (1500 حرف كحد أقصى)','Comment too long (1500 chars max)')); return; }
     const btn=$('#acPost'); if(btn){ btn.disabled=true; btn.textContent='جارٍ الإرسال…'; }
     try{
       const name=((currentUser&&currentUser.username)||'مستخدم').slice(0,60);
       await set(ref(db,'articleComments/'+id+'/'+idx+'/'+shortId(14)), { uid, name, text, at:Date.now() });
-      ta.value=''; toast('تم إضافة تعليقك ✓'); loadComments(id,idx,d);
-    }catch(e){ console.error(e); toast('تعذّر إضافة التعليق — تأكد من نشر قواعد قاعدة البيانات'); }
+      ta.value=''; toast(t('تم إضافة تعليقك ✓','Your comment was added ✓')); loadComments(id,idx,d);
+    }catch(e){ console.error(e); toast(t('تعذّر إضافة التعليق — تأكد من نشر قواعد قاعدة البيانات','Could not add comment — make sure the database rules are published')); }
     finally{ if(btn){ btn.disabled=false; btn.textContent='أضف تعليق'; } }
   }
   async function deleteComment(id, idx, cid, d){
-    if(!confirm('حذف هذا التعليق؟')) return;
-    try{ await remove(ref(db,'articleComments/'+id+'/'+idx+'/'+cid)); toast('تم حذف التعليق'); loadComments(id,idx,d); }
-    catch(e){ console.error(e); toast('تعذّر الحذف — تأكد من نشر القواعد'); }
+    if(!confirm(t('حذف هذا التعليق؟','Delete this comment?'))) return;
+    try{ await remove(ref(db,'articleComments/'+id+'/'+idx+'/'+cid)); toast(t('تم حذف التعليق','Comment deleted')); loadComments(id,idx,d); }
+    catch(e){ console.error(e); toast(t('تعذّر الحذف — تأكد من نشر القواعد','Could not delete — make sure the rules are published')); }
   }
 
   function renderArticle(id,d,idx){
     const dz = blogShell(d);
     const posts = blogPosts(d);
     const p = posts[idx]; if(!p){ renderBlogIndex(id,d); return; }
-    document.title = (p.title||'مقالة')+' — '+(d.title||'مدونة');
+    document.title = (p.title||t('مقالة','Article'))+' — '+(d.title||t('مدونة','Blog'));
     const others = posts.map((x,i)=>({x,i})).filter(o=>o.i!==idx).slice(0,3);
-    const more = others.length ? `<div class="art-more"><div class="blog-sec-h"><h3>مقالات أخرى</h3><span class="rule"></span></div>
+    const more = others.length ? `<div class="art-more"><div class="blog-sec-h"><h3>${t('مقالات أخرى','More Articles')}</h3><span class="rule"></span></div>
       <div class="blog-grid">${others.map(o=>blogPostCard(o.x,o.i)).join('')}</div></div>` : '';
     $('#app').innerHTML = `<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh}">
       ${blogTop(d,dz)}
       <div class="article-view">
-        <button class="art-back">→ العودة إلى المدونة</button>
+        <button class="art-back">${t('→ العودة إلى المدونة','→ Back to blog')}</button>
         ${p.tag?`<span class="art-tag">${esc(p.tag)}</span>`:''}
         <h1 class="art-title">${esc(p.title||'مقالة')}</h1>
         <div class="art-meta">${blogAvatar(d.author,'bh-av')}<span>${esc(d.author||'الكاتب')}</span>
@@ -2365,18 +2366,18 @@ const auth = getAuth(app);
           <span class="dot"></span><span>${blogReadTime(p.body)}</span>
           <span class="dot"></span><span class="art-views" id="artViews">${ART_EYE} …</span></div>
         ${p.cover?`<div class="art-cover"><img src="${esc(p.cover)}" alt="${esc(p.title)}" onerror="this.closest('.art-cover').remove()"/></div>`:''}
-        <div class="art-body dropcap">${renderPostBody(p.body)||'<p>لا يوجد محتوى.</p>'}</div>
+        <div class="art-body dropcap">${renderPostBody(p.body)||`<p>${t('لا يوجد محتوى.','No content.')}</p>`}</div>
         <div class="art-actions">
-          <button class="art-like" id="artLike" type="button" aria-label="إعجاب">${ART_HEART}<span class="al-count">0</span></button>
-          <button class="art-share" id="artShare" type="button">${ART_SHARE}<span>مشاركة</span></button>
+          <button class="art-like" id="artLike" type="button" aria-label="${t('إعجاب','Like')}">${ART_HEART}<span class="al-count">0</span></button>
+          <button class="art-share" id="artShare" type="button">${ART_SHARE}<span>${t('مشاركة','Share')}</span></button>
         </div>
         <section class="art-comments">
-          <h3 class="ac-h">التعليقات <span id="acCount"></span></h3>
+          <h3 class="ac-h">${t('التعليقات','Comments')} <span id="acCount"></span></h3>
           ${currentUser
-            ? `<div class="ac-form"><textarea id="acText" rows="3" maxlength="1500" placeholder="اكتب تعليقك…"></textarea>
-                <button class="btn primary" id="acPost" type="button">أضف تعليق</button></div>`
-            : `<div class="ac-login">سجّل الدخول لإضافة تعليق. <a href="${urlLogin()}">تسجيل الدخول</a></div>`}
-          <div class="ac-list" id="acList"><div class="ac-empty">جارٍ تحميل التعليقات…</div></div>
+            ? `<div class="ac-form"><textarea id="acText" rows="3" maxlength="1500" placeholder="${t('اكتب تعليقك…','Write your comment…')}"></textarea>
+                <button class="btn primary" id="acPost" type="button">${t('أضف تعليق','Add Comment')}</button></div>`
+            : `<div class="ac-login">${t('سجّل الدخول لإضافة تعليق.','Sign in to add a comment.')} <a href="${urlLogin()}">${t('تسجيل الدخول','Log in')}</a></div>`}
+          <div class="ac-list" id="acList"><div class="ac-empty">${t('جارٍ تحميل التعليقات…','Loading comments…')}</div></div>
         </section>
         <div class="elg-ad" data-ad="article"></div>
         ${more}
@@ -2445,7 +2446,7 @@ const auth = getAuth(app);
 
   async function showBlogAdmin(){
     if(!currentUser){ showAuth('login'); return; }
-    document.title='إدارة مدونتي — elgoharyX';
+    document.title=t('إدارة مدونتي — elgoharyX','Manage My Blog — elgoharyX');
     document.body.style.background='';
     const drawEmpty=()=>{
       $('#app').innerHTML = appbar('blogs') + `<div class="wrap">
@@ -2564,7 +2565,7 @@ const auth = getAuth(app);
   function showBlogBuilder(){
     if(!currentUser){ showAuth('login'); return; }
     const editing = blogEditingId!==null;
-    document.title = editing ? 'تعديل المدونة' : 'أنشئ مدونتك';
+    document.title = editing ? t('تعديل المدونة','Edit Blog') : t('أنشئ مدونتك','Create your Blog');
     document.body.style.background='';
     const s=blogState;
     const eyeSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -3238,7 +3239,7 @@ const auth = getAuth(app);
 
   async function showPremium(){
     if(!currentUser){ gotoLogin(); return; }
-    document.title='الاشتراك المميز — elgoharyX';
+    document.title=t('الاشتراك المميز — elgoharyX','Premium — elgoharyX');
     document.body.style.background='';
     $('#app').innerHTML = appbar('premium') + `<div class="wrap"><div class="pro-loader"><div class="pl-in"><div class="pl-ringwrap"><div class="ring"></div></div></div></div></div>` + drawer('premium');
     wireAppbar();
@@ -3334,7 +3335,7 @@ const auth = getAuth(app);
 
   async function showAdmin(){
     if(!currentUser){ gotoLogin(); return; }
-    document.title='لوحة تحكّم الأدمن — elgoharyX';
+    document.title=t('لوحة تحكّم الأدمن — elgoharyX','Admin Dashboard — elgoharyX');
     document.body.style.background='';
     $('#app').innerHTML = appbar('admin') + `<div class="wrap">${skelGrid(3)}</div>` + drawer('admin');
     wireAppbar();
@@ -3349,10 +3350,10 @@ const auth = getAuth(app);
         ${!adminEmail
           ? `<div class="pm-note" style="margin-bottom:12px">لم يُضبط الأدمن بعد — احفظ بريدك لتصبح الأدمن.</div>`
           : (isAdmin()
-            ? `<div class="pm-note ok" style="margin-bottom:12px">الأدمن الحالي: <b dir="ltr" id="admEmailShow" data-full="${esc(adminEmail)}" data-shown="0">${esc(maskEmail(adminEmail))}</b> <button class="lnk-btn" id="admEmailReveal" type="button">إظهار</button></div>`
+            ? `<div class="pm-note ok" style="margin-bottom:12px">أنت الأدمن الحالي ✓</div>`
             : `<div class="pm-note ok" style="margin-bottom:12px">تم ضبط الأدمن بالفعل. 🔒</div>`)}
         ${fbAuthed?`
-          <div class="field"><label>بريد الأدمن</label><input id="admEmailInp" dir="ltr" value="${esc((currentUser.email||'').trim().toLowerCase())}"/></div>
+          <div class="field"><label>بريد الأدمن</label><input id="admEmailInp" dir="ltr" placeholder="اكتب بريد الأدمن الجديد" autocomplete="off"/></div>
           <button class="btn primary" id="admSave" style="width:100%">حفظ بريد الأدمن</button>
           <div class="pm-note" id="admMsg"></div>
         `:`<div class="gate-note" style="display:block">لتعيين الأدمن يجب تسجيل الدخول عبر <b>Google</b> (حساب Firebase). اخرج ثم ادخل بزر «المتابعة بحساب Google» بنفس بريد الأدمن، ثم ارجع هنا واحفظه.</div>`}
@@ -3367,12 +3368,6 @@ const auth = getAuth(app);
         <div class="pm-note" id="admPassMsg"></div>
       </div>`:''}`;
     const wireSetup = () => {
-      // reveal / hide the masked admin email
-      const rv=$('#admEmailReveal');
-      if(rv) rv.onclick=()=>{ const b=$('#admEmailShow'); if(!b) return;
-        const showing=b.dataset.shown==='1';
-        b.textContent = showing ? maskEmail(b.dataset.full) : b.dataset.full;
-        b.dataset.shown = showing?'0':'1'; rv.textContent = showing?'إظهار':'إخفاء'; };
       // save the admin email
       const b=$('#admSave');
       if(b) b.onclick=async()=>{
@@ -3754,8 +3749,10 @@ const auth = getAuth(app);
       // touch the database at most ONCE per browser session; later pages use the cache
       if(!refreshed){
         try{ sessionStorage.setItem(REFRESH_KEY,'1'); }catch(e){}
-        applyPrem();
-        loadUserRecord(uid).then(rec=>{ if(rec){ currentUser={uid, email:rec.email||'', username:rec.username||'مستخدم', photo:rec.photo||''}; cacheUser(currentUser); } }).catch(()=>{});
+        // refresh the user record first (preserving the cached premium flag so it isn't
+        // reset to false), THEN refresh premium — running them concurrently let the
+        // record write clobber the premium write, so an activated member stayed "free".
+        loadUserRecord(uid).then(rec=>{ if(rec){ currentUser={uid, email:rec.email||'', username:rec.username||'مستخدم', photo:rec.photo||'', premium:(getCachedUser()||{}).premium}; cacheUser(currentUser); } }).then(applyPrem).catch(()=>{});
       }
       return;
     }

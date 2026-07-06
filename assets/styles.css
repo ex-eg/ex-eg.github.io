@@ -2325,9 +2325,9 @@
   .ac-item .ac-tx{color:var(--muted);font-size:14px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
 
   /* ============ زر تغيير اللغة ============ */
-  .lang-toggle{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-family:"Space Grotesk",sans-serif;
-    font-size:13px;font-weight:600;color:var(--muted);background:color-mix(in srgb,var(--txt) 4%,transparent);
-    border:1px solid var(--stroke);border-radius:100px;padding:8px 14px;transition:.18s;line-height:1}
-  .lang-toggle:hover{color:var(--txt);border-color:var(--gold-2)}
-  .lang-toggle svg{width:17px;height:17px}
-  html[dir="ltr"] .lang-toggle .lt-label,html[dir="ltr"] body{letter-spacing:0}
+  .lang-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:"Space Grotesk",sans-serif;
+    font-size:12px;font-weight:700;color:var(--muted);background:color-mix(in srgb,var(--txt) 4%,transparent);
+    border:1px solid var(--stroke);border-radius:100px;padding:7px 11px;transition:.18s;line-height:1}
+  .lang-toggle:hover{color:var(--gold-2);border-color:var(--gold-2)}
+  .lang-toggle svg{width:18px;height:18px}
+  .lang-toggle .lt-label{min-width:15px;text-align:center;letter-spacing:.5px}
