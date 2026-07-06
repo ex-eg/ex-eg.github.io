@@ -635,7 +635,7 @@
   .l-spotlight .pf-spot .pf-actions{justify-content:center}
 
   /* layout picker */
-  .layouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:6px 0 20px}
+  .layouts{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:6px 0 20px;overflow-y:auto}
   .lay{cursor:pointer;border:1px solid var(--stroke);border-radius:10px;padding:9px 8px 8px;
     background:rgba(255,255,255,.02);transition:.2s;text-align:center}
   .lay:hover{border-color:rgba(201,165,72,.5)}
@@ -1830,8 +1830,9 @@
     h2{letter-spacing:-.2px}
     .mp-grid{gap:14px}
     .badm-hero{border-radius:18px}
-    /* smoother momentum scroll for horizontal pickers */
-    .bd-picker,.templates,.layouts{-webkit-overflow-scrolling:touch}
+    /* smoother momentum scroll for the pickers, and keep the touch gesture inside
+       the list so the scrolling parent panel/page never "steals" it (was: rigid lists) */
+    .bd-picker,.templates,.layouts,.notif-list{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
   }
   /* =====================================================================
      PREMIUM / PAYMENTS + ADMIN
