@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>elgoharyX — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية</title>
+<script>
+/* backward compatibility: old single-page links used ?id= / ?blog= on the root. */
+(function(){try{var p=new URLSearchParams(location.search),m;
+  if(p.get('id')) m='profile.html?id='+encodeURIComponent(p.get('id'));
+  else if(p.get('blog')) m='blog.html?blog='+encodeURIComponent(p.get('blog'));
+  else if(p.get('edit')) m='create-profile.html?edit='+encodeURIComponent(p.get('edit'));
+  else if(p.get('blogedit')) m='create-blog.html?blogedit='+encodeURIComponent(p.get('blogedit'));
+  else if(p.has('explore')) m='explore.html';
+  if(m) location.replace(m);}catch(e){}})();
+</script>
+<meta name="description" content="elgoharyX منصّة عربية مجانية لإنشاء بروفايل أكاديمي احترافي ومدونة إلكترونية ومشاركتهما برابط دائم — أكثر من 100 تخطيط و50 تصميم مدونة، محرّر يدعم الأكواد، ودعم للهواتف." />
+<meta name="keywords" content="elgoharyX, elgohary, el goharyx, الجوهري, جوهري, جوهري اكس, منشئ بروفايلات, بروفايل أكاديمي, بطاقة تعريف رقمية, ملف شخصي, مدونة إلكترونية, منشئ مدونات, أساتذة, باحثون, السيرة الذاتية, academic profile builder, digital business card, blog builder" />
+<meta name="author" content="elgoharyX" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="theme-color" content="#0c1424" />
+<link rel="canonical" href="https://ex-eg.github.io/" />
+<link rel="icon" type="image/png" href="https://i.ibb.co/1t1TCvH7/103777.png" />
+<link rel="apple-touch-icon" href="https://i.ibb.co/1t1TCvH7/103777.png" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="elgoharyX" />
+<meta property="og:locale" content="ar_AR" />
+<meta property="og:title" content="elgoharyX — منشئ البروفايلات الأكاديمية والمدونات الإلكترونية" />
+<meta property="og:description" content="أنشئ بروفايلك الأكاديمي ومدونتك الإلكترونية مجاناً على elgoharyX وشاركهما برابط دائم." />
+<meta property="og:url" content="https://ex-eg.github.io/" />
+<meta property="og:image" content="https://i.ibb.co/1t1TCvH7/103777.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="elgoharyX — منشئ البروفايلات والمدونات" />
+<meta name="twitter:description" content="أنشئ بروفايلك الأكاديمي ومدونتك الإلكترونية مجاناً وشاركهما برابط. من elgoharyX." />
+<meta name="twitter:image" content="https://i.ibb.co/1t1TCvH7/103777.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "WebSite", "name": "elgoharyX", "alternateName": ["الجوهري إكس", "elgohary", "el goharyx"], "url": "https://ex-eg.github.io/", "inLanguage": "ar", "description": "منصّة عربية لإنشاء بروفايل أكاديمي ومدونة إلكترونية ومشاركتهما برابط دائم." },
+    { "@type": "Organization", "name": "elgoharyX", "url": "https://ex-eg.github.io/", "logo": "https://i.ibb.co/1t1TCvH7/103777.png" },
+    { "@type": "WebApplication", "name": "elgoharyX", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "inLanguage": "ar", "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" } },
+    { "@type": "FAQPage", "mainEntity": [
+      { "@type": "Question", "name": "ما هو elgoharyX؟", "acceptedAnswer": { "@type": "Answer", "text": "elgoharyX منصّة عربية مجانية تتيح لك إنشاء بروفايل أكاديمي احترافي ومدونة إلكترونية ومشاركتهما عبر رابط دائم قابل للتعديل." } },
+      { "@type": "Question", "name": "هل استخدام elgoharyX مجاني؟", "acceptedAnswer": { "@type": "Answer", "text": "نعم، إنشاء البروفايلات والمدونات ومشاركتها على elgoharyX مجاني بالكامل." } },
+      { "@type": "Question", "name": "هل يمكنني إضافة أكواد برمجية في مقالات المدونة؟", "acceptedAnswer": { "@type": "Answer", "text": "نعم، محرّر المدونة في elgoharyX يدعم إدراج كتل الأكواد البرمجية والكود ضمن السطر بتنسيق احترافي." } }
+    ]}
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Amiri:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/styles.css" />
+<style>
+  .hero-wrap{position:relative;overflow:hidden}
+  .orb{position:absolute;border-radius:50%;filter:blur(46px);opacity:.55;pointer-events:none;z-index:0}
+  .orb.o1{width:340px;height:340px;background:radial-gradient(circle,rgba(47,93,176,.9),transparent 70%);top:-80px;right:-40px}
+  .orb.o2{width:300px;height:300px;background:radial-gradient(circle,rgba(201,165,72,.7),transparent 70%);bottom:-60px;left:-30px}
+  .orb.o3{width:220px;height:220px;background:radial-gradient(circle,rgba(63,116,201,.7),transparent 70%);top:40%;left:52%}
+  .home-hero{max-width:1000px;margin:0 auto;padding:clamp(48px,9vw,100px) clamp(16px,5vw,40px) clamp(24px,4vw,44px);text-align:center;position:relative;z-index:1}
+  .home-hero .kick{display:inline-flex;align-items:center;gap:8px;font-family:"Space Grotesk";font-size:12px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--gold-2);border:1px solid var(--stroke);padding:7px 16px;border-radius:100px;margin-bottom:22px;
+    background:color-mix(in srgb,var(--gold) 8%,transparent)}
+  .home-hero .kick .pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--gold-2);display:inline-block}
+  .home-hero h1{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(34px,7.5vw,68px);line-height:1.06;margin-bottom:18px}
+  .home-hero p.lead{color:var(--muted);font-size:clamp(15px,2.2vw,19px);line-height:1.95;max-width:66ch;margin:0 auto 30px}
+  .home-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .home-cta .btn{padding:15px 28px;font-size:15px}
+  .stats{display:flex;gap:clamp(18px,5vw,48px);justify-content:center;flex-wrap:wrap;margin-top:40px}
+  .stat b{display:block;font-family:"Space Grotesk";font-weight:700;font-size:clamp(28px,5vw,44px);color:var(--gold-2);line-height:1}
+  .stat span{font-size:12.5px;color:var(--muted);letter-spacing:.3px}
+  .swatch-strip{margin:6px 0 10px}
+  .marquee .sw{width:140px;height:82px;border-radius:14px;border:1px solid var(--stroke);flex:none;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+  .marquee .sw::after{content:"";position:absolute;left:12px;right:12px;bottom:12px;height:8px;border-radius:5px;background:rgba(255,255,255,.85)}
+  .marquee .sw b{position:absolute;top:10px;right:12px;font-size:11px;color:rgba(255,255,255,.9);font-family:"Space Grotesk"}
+  .home-sec{max-width:1120px;margin:0 auto;padding:clamp(28px,5vw,58px) clamp(16px,5vw,40px)}
+  .home-sec h2{font-family:"Cormorant Garamond",serif;font-size:clamp(26px,4.4vw,40px);text-align:center;margin-bottom:10px}
+  .home-sec .sub{color:var(--muted);text-align:center;font-size:15px;margin-bottom:34px;max-width:60ch;margin-inline:auto;line-height:1.85}
+  .feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+  .feat{border:1px solid var(--stroke);border-radius:18px;padding:26px;background:linear-gradient(180deg,var(--panel),var(--bg-2));position:relative;overflow:hidden}
+  .feat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-2),transparent);opacity:0;transition:opacity .3s}
+  .feat:hover::before{opacity:1}
+  .feat .ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;margin-bottom:16px;color:var(--gold-2);
+    font-family:"Space Grotesk";font-weight:700;font-size:20px;background:color-mix(in srgb,var(--gold) 12%,transparent);border:1px solid var(--stroke);transition:transform .3s var(--ease)}
+  .feat:hover .ic{transform:translateY(-3px) rotate(-4deg)}
+  .feat .ic svg{width:25px;height:25px}
+  .feat h3{font-family:"Cormorant Garamond",serif;font-size:21px;margin-bottom:9px;color:var(--txt)}
+  .feat p{color:var(--muted);font-size:14px;line-height:1.85}
+  .exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:center}
+  .exp-card{border:1px solid var(--stroke);border-radius:20px;padding:30px 24px;background:linear-gradient(180deg,var(--panel),var(--bg-2));text-align:center}
+  .exp-card h3{font-family:"Cormorant Garamond",serif;font-size:24px;margin:20px 0 8px}
+  .exp-card p{color:var(--muted);font-size:14px;line-height:1.8;max-width:38ch;margin:0 auto}
+  .exp-card .tagr{display:inline-block;font-family:"Space Grotesk";font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-2);margin-bottom:4px}
+  .device-phone{width:210px;height:420px;border-radius:36px;background:linear-gradient(160deg,#16223d,#0b1120);border:8px solid #04060c;
+    box-shadow:0 44px 80px -30px rgba(0,0,0,.85),inset 0 0 0 1px var(--stroke);position:relative;overflow:hidden;margin:0 auto}
+  .device-phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);width:74px;height:6px;border-radius:6px;background:#04060c;z-index:4}
+  .dp-screen{position:absolute;inset:0;padding:28px 12px 62px;display:flex;flex-direction:column;gap:9px}
+  .dp-cover{height:92px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--gold));position:relative;overflow:hidden}
+  .dp-cover::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);animation:sheen 3.5s ease-in-out infinite}
+  .dp-line{height:10px;border-radius:6px;background:var(--stroke)}
+  .dp-line.w55{width:55%}.dp-line.w80{width:80%}
+  .dp-row{display:flex;gap:9px}.dp-row .dp-card{flex:1;height:48px;border-radius:11px;background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+  .dp-nav{position:absolute;left:9px;right:9px;bottom:9px;height:46px;border-radius:15px;background:rgba(9,15,28,.92);border:1px solid var(--stroke);
+    display:flex;justify-content:space-around;align-items:center;backdrop-filter:blur(6px)}
+  .dp-nav i{width:22px;height:22px;border-radius:7px;background:var(--stroke)}
+  .dp-nav i.on{background:linear-gradient(135deg,var(--gold),var(--gold-2))}
+  .device-desk{width:100%;max-width:470px;border-radius:15px;overflow:hidden;border:1px solid var(--stroke);background:var(--panel);
+    box-shadow:0 44px 80px -34px rgba(0,0,0,.82);margin:0 auto}
+  .dd-bar{height:36px;display:flex;align-items:center;gap:7px;padding:0 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--stroke)}
+  .dd-bar i{width:11px;height:11px;border-radius:50%;background:var(--stroke)}
+  .dd-bar i:first-child{background:#e0687a}.dd-bar i:nth-child(2){background:#e6c980}.dd-bar i:nth-child(3){background:#5fc08a}
+  .dd-url{flex:1;height:16px;border-radius:8px;background:rgba(255,255,255,.05);margin-inline-start:8px}
+  .dd-body{display:grid;grid-template-columns:120px 1fr;gap:13px;padding:15px}
+  .dd-side{display:flex;flex-direction:column;gap:9px}
+  .dd-side .b{height:34px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid var(--stroke)}
+  .dd-side .b.on{background:color-mix(in srgb,var(--gold) 16%,transparent);border-color:var(--gold)}
+  .dd-hero{height:92px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--gold));position:relative;overflow:hidden;margin-bottom:11px}
+  .dd-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.22) 50%,transparent 60%);animation:sheen 3.8s ease-in-out infinite}
+  .dd-cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .dd-cards .c{height:60px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--stroke)}
+  .install-card{max-width:760px;margin:0 auto;border:1px solid var(--stroke);border-radius:22px;padding:clamp(26px,4vw,42px);
+    background:radial-gradient(600px 300px at 80% -30%,rgba(201,165,72,.16),transparent 60%),linear-gradient(180deg,var(--panel),var(--bg-2));
+    text-align:center;position:relative;overflow:hidden}
+  .install-card .ii{width:66px;height:66px;border-radius:18px;display:grid;place-items:center;margin:0 auto 16px;color:#1a1300;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));box-shadow:0 16px 34px -12px rgba(201,165,72,.6)}
+  .install-card h2{margin-bottom:8px}
+  .install-card p{color:var(--muted);font-size:14.5px;line-height:1.85;max-width:52ch;margin:0 auto 20px}
+  .install-card .btn.gold{padding:15px 32px;font-size:15px}
+  .install-note{font-size:12.5px;color:var(--muted-2);margin-top:12px}
+  .home-faq{max-width:820px;margin:0 auto}
+  .home-faq details{border:1px solid var(--stroke);border-radius:12px;margin-bottom:12px;background:rgba(255,255,255,.02);overflow:hidden;transition:border-color .2s}
+  .home-faq details[open]{border-color:rgba(201,165,72,.4)}
+  .home-faq summary{padding:16px 40px 16px 18px;cursor:pointer;font-weight:600;color:var(--txt);list-style:none;font-size:15px;position:relative}
+  .home-faq summary::-webkit-details-marker{display:none}
+  .home-faq summary::after{content:"+";position:absolute;left:18px;top:14px;color:var(--gold-2);font-size:20px;transition:transform .25s}
+  .home-faq details[open] summary::after{transform:rotate(45deg)}
+  .home-faq .a{padding:2px 18px 16px;color:var(--muted);font-size:14px;line-height:1.9}
+  .home-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px}
+  .home-links a{color:var(--muted);font-size:13.5px;text-decoration:none;border:1px solid var(--stroke-soft);padding:8px 15px;border-radius:100px;transition:.18s}
+  .home-links a:hover{color:var(--gold-2);border-color:var(--gold);transform:translateY(-2px)}
+  @media(max-width:720px){ .exp-grid{grid-template-columns:1fr} }
+  .home-burger{display:none;background:none;border:none;color:var(--txt);cursor:pointer;padding:6px;border-radius:10px;line-height:0}
+  .home-burger svg{width:26px;height:26px}
+  .home-burger:active{background:rgba(255,255,255,.06)}
+  @media(max-width:600px){
+    .appbar .ab-right{display:none}
+    .home-burger{display:inline-flex}
+    .home-hero{padding:38px 18px 20px}
+    .home-hero .kick{font-size:10.5px;padding:6px 13px;margin-bottom:16px}
+    .home-hero h1{font-size:clamp(28px,8.4vw,42px);line-height:1.12;margin-bottom:14px}
+    .home-hero p.lead{font-size:14.5px;line-height:1.85;margin-bottom:22px}
+    .home-cta{flex-direction:column;gap:10px}
+    .home-cta .btn{width:100%}
+    .orb{opacity:.35;filter:blur(38px)}
+    .orb.o1{width:240px;height:240px}.orb.o2{width:220px;height:220px}.orb.o3{width:160px;height:160px}
+    .stats{gap:16px;margin-top:28px}
+    .stat b{font-size:28px}
+    .home-sec{padding:26px 16px}
+    .home-sec h2{font-size:25px}
+    .home-sec .sub{font-size:14px;margin-bottom:26px}
+    .feat{padding:20px;border-radius:16px}
+    .exp-card{padding:24px 18px}
+    .install-card{padding:26px 18px;border-radius:18px}
+    .install-card .btn.gold{width:100%}
+    .home-faq summary{font-size:14.5px}
+    .marquee .sw{width:118px;height:70px}
+  }
+
+  /* redesign 2.0 — stronger hero identity (no motion centerpiece) */
+  .home-hero h1 .grad-text{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .home-hero .kick{background:color-mix(in srgb,var(--gold) 10%,transparent);box-shadow:0 6px 20px -12px rgba(208,170,78,.6)}
+
+  /* لوجو elgoharyX داخل حلقة دوّارة في الهيرو */
+  .hero-logo{position:relative;display:grid;place-items:center;width:112px;height:112px;margin:0 auto 24px}
+  .hero-logo .hl-ring{position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 0deg,transparent 8%,var(--gold),var(--accent-2),var(--gold-2),transparent 92%);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));
+    mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 5px));
+    animation:proSpin 3.4s linear infinite}
+  .hero-logo .hl-logo{position:relative;width:64px;height:64px;object-fit:contain;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.55))}
+  @media(max-width:600px){ .hero-logo{width:92px;height:92px;margin-bottom:18px} .hero-logo .hl-logo{width:52px;height:52px} }
+  @media(prefers-reduced-motion:reduce){ .hero-logo .hl-ring{animation:none} }
+</style>
+<meta name="google-adsense-account" content="ca-pub-8599845319245705">
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8599845319245705" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header class="appbar">
+    <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="mark"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></span>
+      Academic Profiles <span class="ar">· منشئ البروفايلات</span></a>
+    <div class="ab-right">
+      <a class="btn ghost" href="explore.html" style="padding:9px 15px;font-size:13px">استكشف المدونات</a>
+      <a class="btn ghost" href="create-profile.html" style="padding:9px 15px;font-size:13px">أنشئ بروفايل</a>
+      <a class="btn ghost" id="acctLink" href="login.html" style="padding:9px 16px;font-size:13px">تسجيل الدخول</a>
+    </div>
+    <button class="home-burger" id="homeBurger" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+
+  <div id="homeDrawer" class="drawer-wrap">
+    <div class="drawer-bg" data-hclose></div>
+    <aside class="drawer">
+      <div class="drawer-brand">
+        <span class="db-mark"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></span>
+        <div class="db-t"><b>elgoharyX</b><span>منشئ البروفايلات والمدونات</span></div>
+        <button class="dr-x" data-hclose aria-label="إغلاق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <nav class="drawer-nav">
+        <a class="dr-item" id="hAcct" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"/></svg><span>تسجيل الدخول</span></a>
+        <a class="dr-item" href="explore.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg><span>استكشف المدونات</span></a>
+        <a class="dr-item" href="create-profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>أنشئ بروفايل</span></a>
+        <a class="dr-item" href="create-blog.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>أنشئ مدونة</span></a>
+        <div class="dr-sep"></div>
+        <div class="dr-label">المساعدة والمعلومات</div>
+        <a class="dr-item" href="how-to.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.1.9-1.1 1.8"/><path d="M12 16.4h.01"/></svg><span>كيفية الاستخدام</span></a>
+        <a class="dr-item" href="about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>عن الموقع</span></a>
+        <a class="dr-item" href="privacy.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.1-7 10-4-1.9-7-5.5-7-10V6l7-3Z"/></svg><span>سياسة الخصوصية</span></a>
+        <a class="dr-item" href="support.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg><span>الدعم والمساعدة</span></a>
+        <button class="dr-item" data-install><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span>ثبّت التطبيق</span></button>
+      </nav>
+      <div class="drawer-foot"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/><span>© 2026 <b>elgoharyX</b> — جميع الحقوق محفوظة</span></div>
+    </aside>
+  </div>
+
+  <main>
+    <section class="hero-wrap">
+      <span class="orb o1 floaty"></span><span class="orb o2 floaty f2"></span><span class="orb o3 floaty f3"></span>
+      <div class="home-hero">
+        <div class="hero-logo"><span class="hl-ring"></span><img class="hl-logo" src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></div>
+        <span class="kick"><span class="pulse-dot"></span> منصّة elgoharyX العربية</span>
+        <h1>أنشئ <span class="grad-text">بروفايلك الأكاديمي</span><br>و<span class="grad-text">مدونتك الإلكترونية</span> وشاركهما برابط</h1>
+        <p class="lead">منصّة عربية مجانية تصنع لك بطاقة تعريف أكاديمية احترافية ومدونة إلكترونية أنيقة في دقائق — بأكثر من 100 تخطيط للبروفايل و50 تصميماً للمدونة، ومحرّر مقالات يدعم الأكواد البرمجية، وتصميمين منفصلين للهاتف والكمبيوتر.</p>
+        <div class="home-cta">
+          <a class="btn primary" href="create-profile.html">أنشئ بروفايلاً الآن</a>
+          <a class="btn gold" href="create-blog.html">أنشئ مدونتك</a>
+          <a class="btn ghost" href="explore.html">استكشف المدونات</a>
+        </div>
+        <div class="stats">
+          <div class="stat reveal r-zoom"><b data-count="100" data-suffix="+">0</b><span>تخطيط للبروفايل</span></div>
+          <div class="stat reveal r-zoom" data-d="1"><b data-count="50" data-suffix="+">0</b><span>تصميم مدونة</span></div>
+          <div class="stat reveal r-zoom" data-d="2"><b data-count="48">0</b><span>لون احترافي</span></div>
+          <div class="stat reveal r-zoom" data-d="3"><b data-count="100" data-suffix="%">0</b><span>مجاني</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-sec" style="padding-top:6px">
+      <div class="marquee reveal"><div class="marquee-track" id="swTrack"></div></div>
+    </section>
+
+    <section class="home-sec">
+      <h2 class="reveal">لماذا elgoharyX؟</h2>
+      <p class="sub reveal">كل ما تحتاجه لتقديم نفسك ونشر أفكارك باحترافية، في مكان واحد مجاني وسريع.</p>
+      <div class="feat-grid">
+        <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"/></svg></div>
+          <h3>بروفايل أكاديمي احترافي</h3><p>أكثر من 100 تخطيط و48 لوناً، مع صورة ووسائل تواصل ومؤثرات ثلاثية الأبعاد وحركات ظهور.</p></div>
+        <div class="feat reveal" data-d="1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12Z"/></svg></div>
+          <h3>مدونة إلكترونية أنيقة</h3><p>50 تصميم مجلة، محرّر غني يدعم العناوين والاقتباسات والصور <b>والأكواد البرمجية</b>، وإدارة نشر كاملة.</p></div>
+        <div class="feat reveal" data-d="2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
+          <h3>رابط دائم قابل للمشاركة</h3><p>رابط دائم ومختصر تلقائياً لكل بروفايل ومدونة — أو «رابط تعديل» لمن يعمل معك.</p></div>
+        <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
+          <h3>تصميمان: هاتف وكمبيوتر</h3><p>تجربة هاتف بشريط تنقّل سفلي، وتجربة كمبيوتر واسعة — مع إمكانية التثبيت كتطبيق (PWA).</p></div>
+        <div class="feat reveal" data-d="1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.1-7 10-4-1.9-7-5.5-7-10V6l7-3Z"/></svg></div>
+          <h3>آمن ومجاني</h3><p>بياناتك في قاعدة بيانات Firebase الآمنة، والاستخدام مجاني بالكامل بلا رسوم خفية.</p></div>
+        <div class="feat reveal" data-d="2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></div>
+          <h3>لوحة إدارة سهلة</h3><p>أدر بروفايلاتك ومدونتك من لوحة واحدة: أضف، عدّل، انشر أو ألغِ النشر، واحذف بضغطة.</p></div>
+      </div>
+    </section>
+
+    <section class="home-sec">
+      <h2 class="reveal">تصميمان لتجربة مثالية</h2>
+      <p class="sub reveal">واجهة مصمّمة خصيصاً لكل جهاز — لا مجرّد تكبير أو تصغير.</p>
+      <div class="exp-grid">
+        <div class="exp-card reveal r-right">
+          <div class="device-phone">
+            <div class="dp-screen">
+              <div class="dp-cover"></div>
+              <div class="dp-line w80"></div><div class="dp-line w55"></div>
+              <div class="dp-row"><div class="dp-card"></div><div class="dp-card"></div></div>
+              <div class="dp-line w80"></div>
+              <div class="dp-nav"><i class="on"></i><i></i><i></i><i></i></div>
+            </div>
+          </div>
+          <span class="tagr">MOBILE</span>
+          <h3>تصميم الهاتف</h3>
+          <p>شريط تنقّل سفلي، لمسات كبيرة، ومعاينة حيّة — تجربة تطبيق حقيقية في يدك.</p>
+        </div>
+        <div class="exp-card reveal r-left" data-d="1">
+          <div class="device-desk">
+            <div class="dd-bar"><i></i><i></i><i></i><span class="dd-url"></span></div>
+            <div class="dd-body">
+              <div class="dd-side"><span class="b on"></span><span class="b"></span><span class="b"></span><span class="b"></span></div>
+              <div class="dd-main"><div class="dd-hero"></div><div class="dd-cards"><span class="c"></span><span class="c"></span><span class="c"></span></div></div>
+            </div>
+          </div>
+          <span class="tagr">DESKTOP</span>
+          <h3>تصميم الكمبيوتر</h3>
+          <p>لوحة واسعة بمعاينة جانبية ومؤثرات حركية أنيقة — كل الأدوات أمام عينيك.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-sec">
+      <h2 class="reveal">ابدأ في 3 خطوات</h2>
+      <p class="sub reveal">من التسجيل إلى رابط جاهز للمشاركة — دقائق معدودة.</p>
+      <div class="feat-grid">
+        <div class="feat reveal"><div class="ic">1</div><h3>سجّل الدخول</h3><p>أنشئ حساباً مجانياً على elgoharyX بالبريد وكلمة مرور.</p></div>
+        <div class="feat reveal" data-d="1"><div class="ic">2</div><h3>صمّم محتواك</h3><p>اختر تصميماً، عبّئ بياناتك أو اكتب مقالاتك، وشاهد المعاينة الحيّة.</p></div>
+        <div class="feat reveal" data-d="2"><div class="ic">3</div><h3>انشر وشارك</h3><p>احفظ لتحصل على رابط دائم مختصر، وشاركه مع العالم.</p></div>
+      </div>
+    </section>
+
+    <section class="home-sec elg-ad-sec">
+      <div class="elg-ad" data-ad="home"></div>
+    </section>
+
+    <section class="home-sec">
+      <div class="install-card reveal r-zoom">
+        <div class="ii floaty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></div>
+        <h2>ثبّت elgoharyX على جهازك</h2>
+        <p>احصل على تطبيق كامل على شاشتك الرئيسية — فتح فوري، عمل دون اتصال، وبلا متجر تطبيقات. متاح للأندرويد والآيفون والكمبيوتر.</p>
+        <button class="btn gold" data-install>⬇ ثبّت التطبيق الآن</button>
+        <div class="install-note">على الآيفون: زر المشاركة ↑ ثم «إضافة إلى الشاشة الرئيسية».</div>
+      </div>
+    </section>
+
+    <section class="home-sec">
+      <h2 class="reveal">الأسئلة الشائعة</h2>
+      <p class="sub reveal">كل ما تريد معرفته عن elgoharyX.</p>
+      <div class="home-faq reveal">
+        <details open><summary>ما هو elgoharyX؟</summary><div class="a">elgoharyX منصّة عربية مجانية تتيح لك إنشاء بروفايل أكاديمي احترافي ومدونة إلكترونية ومشاركتهما عبر رابط دائم قابل للتعديل — مصمّمة للأساتذة والباحثين وكل من يريد حضوراً رقمياً أنيقاً.</div></details>
+        <details><summary>هل استخدام elgoharyX مجاني؟</summary><div class="a">نعم، إنشاء البروفايلات والمدونات ومشاركتها مجاني بالكامل.</div></details>
+        <details><summary>هل يمكنني كتابة أكواد برمجية داخل مقالات المدونة؟</summary><div class="a">نعم، محرّر المدونة يدعم إدراج كتل الأكواد البرمجية والكود ضمن السطر بتنسيق احترافي.</div></details>
+        <details><summary>كم عدد التصميمات المتاحة؟</summary><div class="a">أكثر من 100 تخطيط و48 لوناً للبروفايلات، و50 تصميم مجلة احترافي للمدونات.</div></details>
+        <details><summary>هل يعمل الموقع على الهاتف؟</summary><div class="a">بالتأكيد — للموقع تصميمان منفصلان: تجربة هاتف بشريط سفلي وتجربة كمبيوتر واسعة، ويمكن تثبيته كتطبيق.</div></details>
+      </div>
+    </section>
+
+    <section class="home-sec" style="text-align:center;padding-top:6px">
+      <h2 class="reveal">جاهز للبدء؟</h2>
+      <p class="sub reveal">أنشئ أول بروفايل أو مدونة على elgoharyX الآن — مجاناً.</p>
+      <div class="home-cta reveal"><a class="btn primary" href="create-profile.html">ابدأ الآن مجاناً</a></div>
+      <div class="home-links">
+        <a href="explore.html">استكشف المدونات</a>
+        <a href="create-profile.html">أنشئ بروفايل</a>
+        <a href="create-blog.html">أنشئ مدونة</a>
+        <a href="about.html">عن الموقع</a>
+        <a href="how-to.html">كيفية الاستخدام</a>
+        <a href="privacy.html">سياسة الخصوصية</a>
+        <a href="support.html">الدعم</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX logo" />
+    <span>© 2026 <b>elgoharyX</b> — جميع الحقوق محفوظة</span>
+  </footer>
+  <div class="toast" id="toast">تم النسخ ✓</div>
+
+  <script>
+    try{ if(localStorage.getItem('apb_mode')==='light') document.documentElement.setAttribute('data-mode','light'); }catch(e){}
+    try{ if(localStorage.getItem('apb_session_uid')){
+      var a=document.getElementById('acctLink'); if(a){ a.textContent='حسابي'; a.href='my-profiles.html'; }
+      var ha=document.getElementById('hAcct'); if(ha){ ha.querySelector('span').textContent='حسابي'; ha.href='my-profiles.html'; }
+    } }catch(e){}
+    // mobile side menu (drawer)
+    (function(){
+      var hd=document.getElementById('homeDrawer'), hb=document.getElementById('homeBurger');
+      if(!hd||!hb) return;
+      hb.addEventListener('click',function(){ hd.classList.add('open'); });
+      Array.prototype.forEach.call(hd.querySelectorAll('[data-hclose]'),function(x){
+        x.addEventListener('click',function(){ hd.classList.remove('open'); });
+      });
+      document.addEventListener('keydown',function(e){ if(e.key==='Escape') hd.classList.remove('open'); });
+    })();
+    (function(){
+      var grads=[['#0f2a5e','#264f96','رويال'],['#1a1140','#4b1c7a','أورورا'],['#06301f','#1aa564','زمرّد'],
+        ['#5e0f1a','#c8384a','قرمزي'],['#7a4b12','#e6c980','ذهبي'],['#12324a','#3f74c9','محيط'],
+        ['#2a1145','#8a4bd6','بنفسجي'],['#0d3b34','#2bb0a0','نعناع'],['#3a1020','#d0567f','وردي'],['#1c2540','#6b7bb0','رمادي']];
+      var t=document.getElementById('swTrack'); if(!t) return; var html='';
+      for(var r=0;r<2;r++){ for(var i=0;i<grads.length;i++){ var g=grads[i];
+        html+='<div class="sw" style="background:linear-gradient(135deg,'+g[0]+','+g[1]+')"><b>'+g[2]+'</b></div>'; } }
+      t.innerHTML=html;
+    })();
+  </script>
+  <script src="assets/fx.js"></script>
+  <script src="assets/pwa.js"></script>
+  <script src="assets/ads.js" defer></script>
+</body>
+</html>
