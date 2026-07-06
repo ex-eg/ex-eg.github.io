@@ -165,8 +165,55 @@
         "cover":     { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 4000)" },
         "design":    { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 20)" },
         "count":     { ".validate": "!newData.exists() || newData.isNumber()" },
+        "rSum":      { ".validate": "!newData.exists() || newData.isNumber()" },
+        "rCount":    { ".validate": "!newData.exists() || newData.isNumber()" },
         "updatedAt": { ".validate": "newData.isNumber()" },
         "$other":    { ".validate": false }
+      }
+    },
+
+    "blogRatings": {
+      "$blog": {
+        ".read": true,
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+        }
+      }
+    },
+
+    "articleStats": {
+      "$blog": {
+        ".read": true,
+        "$idx": {
+          "views": {
+            ".write": true,
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "likes": {
+            "$uid": {
+              ".write": true,
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        }
+      }
+    },
+
+    "articleComments": {
+      "$blog": {
+        ".read": true,
+        "$idx": {
+          "$cid": {
+            ".write": true,
+            ".validate": "newData.hasChildren(['text','at'])",
+            "uid":  { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 64)" },
+            "name": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 60)" },
+            "text": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 1500" },
+            "at":   { ".validate": "newData.isNumber()" },
+            "$other": { ".validate": false }
+          }
+        }
       }
     },
 
