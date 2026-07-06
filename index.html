@@ -56,6 +56,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Amiri:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/styles.css" />
+<script src="assets/i18n.js" defer></script>
 <style>
   .hero-wrap{position:relative;overflow:hidden}
   .orb{position:absolute;border-radius:50%;filter:blur(46px);opacity:.55;pointer-events:none;z-index:0}
@@ -196,10 +197,11 @@
     <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="mark"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></span>
       Academic Profiles <span class="ar">· منشئ البروفايلات</span></a>
     <div class="ab-right">
-      <a class="btn ghost" href="explore.html" style="padding:9px 15px;font-size:13px">استكشف المدونات</a>
-      <a class="btn ghost" href="create-profile.html" style="padding:9px 15px;font-size:13px">أنشئ بروفايل</a>
+      <a class="btn ghost" href="explore.html" style="padding:9px 15px;font-size:13px" data-en="Explore Blogs">استكشف المدونات</a>
+      <a class="btn ghost" href="create-profile.html" style="padding:9px 15px;font-size:13px" data-en="Create Profile">أنشئ بروفايل</a>
       <a class="btn ghost" id="acctLink" href="login.html" style="padding:9px 16px;font-size:13px">تسجيل الدخول</a>
     </div>
+    <button class="lang-toggle" data-lang-toggle aria-label="Switch language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg><span class="lt-label">English</span></button>
     <button class="home-burger" id="homeBurger" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </header>
 
@@ -213,16 +215,16 @@
       </div>
       <nav class="drawer-nav">
         <a class="dr-item" id="hAcct" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"/></svg><span>تسجيل الدخول</span></a>
-        <a class="dr-item" href="explore.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg><span>استكشف المدونات</span></a>
-        <a class="dr-item" href="create-profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>أنشئ بروفايل</span></a>
-        <a class="dr-item" href="create-blog.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>أنشئ مدونة</span></a>
+        <a class="dr-item" href="explore.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg><span data-en="Explore Blogs">استكشف المدونات</span></a>
+        <a class="dr-item" href="create-profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-en="Create Profile">أنشئ بروفايل</span></a>
+        <a class="dr-item" href="create-blog.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-en="Create Blog">أنشئ مدونة</span></a>
         <div class="dr-sep"></div>
-        <div class="dr-label">المساعدة والمعلومات</div>
-        <a class="dr-item" href="how-to.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.1.9-1.1 1.8"/><path d="M12 16.4h.01"/></svg><span>كيفية الاستخدام</span></a>
-        <a class="dr-item" href="about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span>عن الموقع</span></a>
-        <a class="dr-item" href="privacy.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.1-7 10-4-1.9-7-5.5-7-10V6l7-3Z"/></svg><span>سياسة الخصوصية</span></a>
-        <a class="dr-item" href="support.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg><span>الدعم والمساعدة</span></a>
-        <button class="dr-item" data-install><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span>ثبّت التطبيق</span></button>
+        <div class="dr-label" data-en="Help &amp; Info">المساعدة والمعلومات</div>
+        <a class="dr-item" href="how-to.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.1.9-1.1 1.8"/><path d="M12 16.4h.01"/></svg><span data-en="How to Use">كيفية الاستخدام</span></a>
+        <a class="dr-item" href="about.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg><span data-en="About">عن الموقع</span></a>
+        <a class="dr-item" href="privacy.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.1-7 10-4-1.9-7-5.5-7-10V6l7-3Z"/></svg><span data-en="Privacy Policy">سياسة الخصوصية</span></a>
+        <a class="dr-item" href="support.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.4"/></svg><span data-en="Support">الدعم والمساعدة</span></a>
+        <button class="dr-item" data-install><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg><span data-en="Install App">ثبّت التطبيق</span></button>
       </nav>
       <div class="drawer-foot"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/><span>© 2026 <b>elgoharyX</b> — جميع الحقوق محفوظة</span></div>
     </aside>
@@ -233,19 +235,19 @@
       <span class="orb o1 floaty"></span><span class="orb o2 floaty f2"></span><span class="orb o3 floaty f3"></span>
       <div class="home-hero">
         <div class="hero-logo"><span class="hl-ring"></span><img class="hl-logo" src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></div>
-        <span class="kick"><span class="pulse-dot"></span> منصّة elgoharyX العربية</span>
-        <h1>أنشئ <span class="grad-text">بروفايلك الأكاديمي</span><br>و<span class="grad-text">مدونتك الإلكترونية</span> وشاركهما برابط</h1>
-        <p class="lead">منصّة عربية مجانية تصنع لك بطاقة تعريف أكاديمية احترافية ومدونة إلكترونية أنيقة في دقائق — بأكثر من 100 تخطيط للبروفايل و50 تصميماً للمدونة، ومحرّر مقالات يدعم الأكواد البرمجية، وتصميمين منفصلين للهاتف والكمبيوتر.</p>
+        <span class="kick" data-en="&lt;span class=&quot;pulse-dot&quot;&gt;&lt;/span&gt; The elgoharyX Platform"><span class="pulse-dot"></span> منصّة elgoharyX العربية</span>
+        <h1 data-en="Build your &lt;span class=&quot;grad-text&quot;&gt;academic profile&lt;/span&gt;&lt;br&gt;and &lt;span class=&quot;grad-text&quot;&gt;online blog&lt;/span&gt; and share them with a link">أنشئ <span class="grad-text">بروفايلك الأكاديمي</span><br>و<span class="grad-text">مدونتك الإلكترونية</span> وشاركهما برابط</h1>
+        <p class="lead" data-en="A free platform that builds you a professional academic ID card and an elegant online blog in minutes — with 100+ profile layouts, 50 blog designs, an article editor that supports code blocks, and two separate designs for phone and desktop.">منصّة عربية مجانية تصنع لك بطاقة تعريف أكاديمية احترافية ومدونة إلكترونية أنيقة في دقائق — بأكثر من 100 تخطيط للبروفايل و50 تصميماً للمدونة، ومحرّر مقالات يدعم الأكواد البرمجية، وتصميمين منفصلين للهاتف والكمبيوتر.</p>
         <div class="home-cta">
-          <a class="btn primary" href="create-profile.html">أنشئ بروفايلاً الآن</a>
-          <a class="btn gold" href="create-blog.html">أنشئ مدونتك</a>
-          <a class="btn ghost" href="explore.html">استكشف المدونات</a>
+          <a class="btn primary" href="create-profile.html" data-en="Create a Profile Now">أنشئ بروفايلاً الآن</a>
+          <a class="btn gold" href="create-blog.html" data-en="Create your Blog">أنشئ مدونتك</a>
+          <a class="btn ghost" href="explore.html" data-en="Explore Blogs">استكشف المدونات</a>
         </div>
         <div class="stats">
-          <div class="stat reveal r-zoom"><b data-count="100" data-suffix="+">0</b><span>تخطيط للبروفايل</span></div>
-          <div class="stat reveal r-zoom" data-d="1"><b data-count="50" data-suffix="+">0</b><span>تصميم مدونة</span></div>
-          <div class="stat reveal r-zoom" data-d="2"><b data-count="48">0</b><span>لون احترافي</span></div>
-          <div class="stat reveal r-zoom" data-d="3"><b data-count="100" data-suffix="%">0</b><span>مجاني</span></div>
+          <div class="stat reveal r-zoom"><b data-count="100" data-suffix="+">0</b><span data-en="Profile Layouts">تخطيط للبروفايل</span></div>
+          <div class="stat reveal r-zoom" data-d="1"><b data-count="50" data-suffix="+">0</b><span data-en="Blog Designs">تصميم مدونة</span></div>
+          <div class="stat reveal r-zoom" data-d="2"><b data-count="48">0</b><span data-en="Pro Colors">لون احترافي</span></div>
+          <div class="stat reveal r-zoom" data-d="3"><b data-count="100" data-suffix="%">0</b><span data-en="Free">مجاني</span></div>
         </div>
       </div>
     </section>
@@ -255,8 +257,8 @@
     </section>
 
     <section class="home-sec">
-      <h2 class="reveal">شاهد كيف يعمل elgoharyX</h2>
-      <p class="sub reveal">جولة سريعة تشرح لك إنشاء بروفايلك ومدونتك ومشاركتهما في دقائق.</p>
+      <h2 class="reveal" data-en="See how elgoharyX works">شاهد كيف يعمل elgoharyX</h2>
+      <p class="sub reveal" data-en="A quick tour showing how to create your profile and blog and share them in minutes.">جولة سريعة تشرح لك إنشاء بروفايلك ومدونتك ومشاركتهما في دقائق.</p>
       <div class="video-wrap reveal r-zoom">
         <video controls preload="metadata" playsinline poster="https://i.ibb.co/1t1TCvH7/103777.png">
           <source src="assets/elgoharyX.mp4" type="video/mp4" />
@@ -266,27 +268,27 @@
     </section>
 
     <section class="home-sec">
-      <h2 class="reveal">لماذا elgoharyX؟</h2>
-      <p class="sub reveal">كل ما تحتاجه لتقديم نفسك ونشر أفكارك باحترافية، في مكان واحد مجاني وسريع.</p>
+      <h2 class="reveal" data-en="Why elgoharyX?">لماذا elgoharyX؟</h2>
+      <p class="sub reveal" data-en="Everything you need to present yourself and publish your ideas professionally — in one free, fast place.">كل ما تحتاجه لتقديم نفسك ونشر أفكارك باحترافية، في مكان واحد مجاني وسريع.</p>
       <div class="feat-grid">
         <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"/></svg></div>
-          <h3>بروفايل أكاديمي احترافي</h3><p>أكثر من 100 تخطيط و48 لوناً، مع صورة ووسائل تواصل ومؤثرات ثلاثية الأبعاد وحركات ظهور.</p></div>
+          <h3 data-en="Professional Academic Profile">بروفايل أكاديمي احترافي</h3><p data-en="100+ layouts and 48 colors, with a photo, social links, 3D effects, and reveal animations.">أكثر من 100 تخطيط و48 لوناً، مع صورة ووسائل تواصل ومؤثرات ثلاثية الأبعاد وحركات ظهور.</p></div>
         <div class="feat reveal" data-d="1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12Z"/></svg></div>
-          <h3>مدونة إلكترونية أنيقة</h3><p>50 تصميم مجلة، محرّر غني يدعم العناوين والاقتباسات والصور <b>والأكواد البرمجية</b>، وإدارة نشر كاملة.</p></div>
+          <h3 data-en="Elegant Online Blog">مدونة إلكترونية أنيقة</h3><p data-en="50 magazine designs, a rich editor supporting headings, quotes, images &lt;b&gt;and code blocks&lt;/b&gt;, with full publishing control.">50 تصميم مجلة، محرّر غني يدعم العناوين والاقتباسات والصور <b>والأكواد البرمجية</b>، وإدارة نشر كاملة.</p></div>
         <div class="feat reveal" data-d="2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></div>
-          <h3>رابط دائم قابل للمشاركة</h3><p>رابط دائم ومختصر تلقائياً لكل بروفايل ومدونة — أو «رابط تعديل» لمن يعمل معك.</p></div>
+          <h3 data-en="Permanent Shareable Link">رابط دائم قابل للمشاركة</h3><p data-en="A permanent, auto-shortened link for every profile and blog — or an “edit link” for collaborators.">رابط دائم ومختصر تلقائياً لكل بروفايل ومدونة — أو «رابط تعديل» لمن يعمل معك.</p></div>
         <div class="feat reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
-          <h3>تصميمان: هاتف وكمبيوتر</h3><p>تجربة هاتف بشريط تنقّل سفلي، وتجربة كمبيوتر واسعة — مع إمكانية التثبيت كتطبيق (PWA).</p></div>
+          <h3 data-en="Two Designs: Phone &amp; Desktop">تصميمان: هاتف وكمبيوتر</h3><p data-en="A phone experience with a bottom nav bar, and a wide desktop experience — installable as an app (PWA).">تجربة هاتف بشريط تنقّل سفلي، وتجربة كمبيوتر واسعة — مع إمكانية التثبيت كتطبيق (PWA).</p></div>
         <div class="feat reveal" data-d="1"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.1-7 10-4-1.9-7-5.5-7-10V6l7-3Z"/></svg></div>
-          <h3>آمن ومجاني</h3><p>بياناتك في قاعدة بيانات Firebase الآمنة، والاستخدام مجاني بالكامل بلا رسوم خفية.</p></div>
+          <h3 data-en="Secure &amp; Free">آمن ومجاني</h3><p data-en="Your data lives in a secure Firebase database, and use is completely free with no hidden fees.">بياناتك في قاعدة بيانات Firebase الآمنة، والاستخدام مجاني بالكامل بلا رسوم خفية.</p></div>
         <div class="feat reveal" data-d="2"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></div>
-          <h3>لوحة إدارة سهلة</h3><p>أدر بروفايلاتك ومدونتك من لوحة واحدة: أضف، عدّل، انشر أو ألغِ النشر، واحذف بضغطة.</p></div>
+          <h3 data-en="Easy Admin Panel">لوحة إدارة سهلة</h3><p data-en="Manage your profiles and blog from one panel: add, edit, publish or unpublish, and delete in one click.">أدر بروفايلاتك ومدونتك من لوحة واحدة: أضف، عدّل، انشر أو ألغِ النشر، واحذف بضغطة.</p></div>
       </div>
     </section>
 
     <section class="home-sec">
-      <h2 class="reveal">تصميمان لتجربة مثالية</h2>
-      <p class="sub reveal">واجهة مصمّمة خصيصاً لكل جهاز — لا مجرّد تكبير أو تصغير.</p>
+      <h2 class="reveal" data-en="Two Designs for a Perfect Experience">تصميمان لتجربة مثالية</h2>
+      <p class="sub reveal" data-en="An interface crafted for each device — not just scaled up or down.">واجهة مصمّمة خصيصاً لكل جهاز — لا مجرّد تكبير أو تصغير.</p>
       <div class="exp-grid">
         <div class="exp-card reveal r-right">
           <div class="device-phone">
@@ -299,8 +301,8 @@
             </div>
           </div>
           <span class="tagr">MOBILE</span>
-          <h3>تصميم الهاتف</h3>
-          <p>شريط تنقّل سفلي، لمسات كبيرة، ومعاينة حيّة — تجربة تطبيق حقيقية في يدك.</p>
+          <h3 data-en="Phone Design">تصميم الهاتف</h3>
+          <p data-en="Bottom nav bar, large touch targets, and a live preview — a real app experience in your hand.">شريط تنقّل سفلي، لمسات كبيرة، ومعاينة حيّة — تجربة تطبيق حقيقية في يدك.</p>
         </div>
         <div class="exp-card reveal r-left" data-d="1">
           <div class="device-desk">
@@ -311,19 +313,19 @@
             </div>
           </div>
           <span class="tagr">DESKTOP</span>
-          <h3>تصميم الكمبيوتر</h3>
-          <p>لوحة واسعة بمعاينة جانبية ومؤثرات حركية أنيقة — كل الأدوات أمام عينيك.</p>
+          <h3 data-en="Desktop Design">تصميم الكمبيوتر</h3>
+          <p data-en="A wide panel with a side preview and elegant motion effects — every tool in front of you.">لوحة واسعة بمعاينة جانبية ومؤثرات حركية أنيقة — كل الأدوات أمام عينيك.</p>
         </div>
       </div>
     </section>
 
     <section class="home-sec">
-      <h2 class="reveal">ابدأ في 3 خطوات</h2>
-      <p class="sub reveal">من التسجيل إلى رابط جاهز للمشاركة — دقائق معدودة.</p>
+      <h2 class="reveal" data-en="Start in 3 Steps">ابدأ في 3 خطوات</h2>
+      <p class="sub reveal" data-en="From signing up to a share-ready link — just a few minutes.">من التسجيل إلى رابط جاهز للمشاركة — دقائق معدودة.</p>
       <div class="feat-grid">
-        <div class="feat reveal"><div class="ic">1</div><h3>سجّل الدخول</h3><p>أنشئ حساباً مجانياً على elgoharyX بالبريد وكلمة مرور.</p></div>
-        <div class="feat reveal" data-d="1"><div class="ic">2</div><h3>صمّم محتواك</h3><p>اختر تصميماً، عبّئ بياناتك أو اكتب مقالاتك، وشاهد المعاينة الحيّة.</p></div>
-        <div class="feat reveal" data-d="2"><div class="ic">3</div><h3>انشر وشارك</h3><p>احفظ لتحصل على رابط دائم مختصر، وشاركه مع العالم.</p></div>
+        <div class="feat reveal"><div class="ic">1</div><h3 data-en="Sign In">سجّل الدخول</h3><p data-en="Create a free elgoharyX account with your email and a password.">أنشئ حساباً مجانياً على elgoharyX بالبريد وكلمة مرور.</p></div>
+        <div class="feat reveal" data-d="1"><div class="ic">2</div><h3 data-en="Design your Content">صمّم محتواك</h3><p data-en="Pick a design, fill in your data or write your articles, and watch the live preview.">اختر تصميماً، عبّئ بياناتك أو اكتب مقالاتك، وشاهد المعاينة الحيّة.</p></div>
+        <div class="feat reveal" data-d="2"><div class="ic">3</div><h3 data-en="Publish &amp; Share">انشر وشارك</h3><p data-en="Save to get a permanent short link, and share it with the world.">احفظ لتحصل على رابط دائم مختصر، وشاركه مع العالم.</p></div>
       </div>
     </section>
 
@@ -334,37 +336,37 @@
     <section class="home-sec">
       <div class="install-card reveal r-zoom">
         <div class="ii floaty"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/></svg></div>
-        <h2>ثبّت elgoharyX على جهازك</h2>
-        <p>احصل على تطبيق كامل على شاشتك الرئيسية — فتح فوري، عمل دون اتصال، وبلا متجر تطبيقات. متاح للأندرويد والآيفون والكمبيوتر.</p>
-        <button class="btn gold" data-install>⬇ ثبّت التطبيق الآن</button>
-        <div class="install-note">على الآيفون: زر المشاركة ↑ ثم «إضافة إلى الشاشة الرئيسية».</div>
+        <h2 data-en="Install elgoharyX on your device">ثبّت elgoharyX على جهازك</h2>
+        <p data-en="Get a full app on your home screen — instant open, offline support, and no app store. Available for Android, iPhone, and desktop.">احصل على تطبيق كامل على شاشتك الرئيسية — فتح فوري، عمل دون اتصال، وبلا متجر تطبيقات. متاح للأندرويد والآيفون والكمبيوتر.</p>
+        <button class="btn gold" data-install data-en="⬇ Install the App Now">⬇ ثبّت التطبيق الآن</button>
+        <div class="install-note" data-en="On iPhone: the Share button ↑ then “Add to Home Screen”.">على الآيفون: زر المشاركة ↑ ثم «إضافة إلى الشاشة الرئيسية».</div>
       </div>
     </section>
 
     <section class="home-sec">
-      <h2 class="reveal">الأسئلة الشائعة</h2>
-      <p class="sub reveal">كل ما تريد معرفته عن elgoharyX.</p>
+      <h2 class="reveal" data-en="Frequently Asked Questions">الأسئلة الشائعة</h2>
+      <p class="sub reveal" data-en="Everything you want to know about elgoharyX.">كل ما تريد معرفته عن elgoharyX.</p>
       <div class="home-faq reveal">
-        <details open><summary>ما هو elgoharyX؟</summary><div class="a">elgoharyX منصّة عربية مجانية تتيح لك إنشاء بروفايل أكاديمي احترافي ومدونة إلكترونية ومشاركتهما عبر رابط دائم قابل للتعديل — مصمّمة للأساتذة والباحثين وكل من يريد حضوراً رقمياً أنيقاً.</div></details>
-        <details><summary>هل استخدام elgoharyX مجاني؟</summary><div class="a">نعم، إنشاء البروفايلات والمدونات ومشاركتها مجاني بالكامل.</div></details>
-        <details><summary>هل يمكنني كتابة أكواد برمجية داخل مقالات المدونة؟</summary><div class="a">نعم، محرّر المدونة يدعم إدراج كتل الأكواد البرمجية والكود ضمن السطر بتنسيق احترافي.</div></details>
-        <details><summary>كم عدد التصميمات المتاحة؟</summary><div class="a">أكثر من 100 تخطيط و48 لوناً للبروفايلات، و50 تصميم مجلة احترافي للمدونات.</div></details>
-        <details><summary>هل يعمل الموقع على الهاتف؟</summary><div class="a">بالتأكيد — للموقع تصميمان منفصلان: تجربة هاتف بشريط سفلي وتجربة كمبيوتر واسعة، ويمكن تثبيته كتطبيق.</div></details>
+        <details open><summary data-en="What is elgoharyX?">ما هو elgoharyX؟</summary><div class="a" data-en="elgoharyX is a free platform that lets you create a professional academic profile and an online blog and share them via a permanent, editable link — built for professors, researchers, and anyone who wants an elegant digital presence.">elgoharyX منصّة عربية مجانية تتيح لك إنشاء بروفايل أكاديمي احترافي ومدونة إلكترونية ومشاركتهما عبر رابط دائم قابل للتعديل — مصمّمة للأساتذة والباحثين وكل من يريد حضوراً رقمياً أنيقاً.</div></details>
+        <details><summary data-en="Is elgoharyX free to use?">هل استخدام elgoharyX مجاني؟</summary><div class="a" data-en="Yes, creating profiles and blogs and sharing them is completely free.">نعم، إنشاء البروفايلات والمدونات ومشاركتها مجاني بالكامل.</div></details>
+        <details><summary data-en="Can I write code inside blog articles?">هل يمكنني كتابة أكواد برمجية داخل مقالات المدونة؟</summary><div class="a" data-en="Yes, the blog editor supports inserting code blocks and inline code with professional formatting.">نعم، محرّر المدونة يدعم إدراج كتل الأكواد البرمجية والكود ضمن السطر بتنسيق احترافي.</div></details>
+        <details><summary data-en="How many designs are available?">كم عدد التصميمات المتاحة؟</summary><div class="a" data-en="Over 100 layouts and 48 colors for profiles, and 50 professional magazine designs for blogs.">أكثر من 100 تخطيط و48 لوناً للبروفايلات، و50 تصميم مجلة احترافي للمدونات.</div></details>
+        <details><summary data-en="Does the site work on phones?">هل يعمل الموقع على الهاتف؟</summary><div class="a" data-en="Absolutely — the site has two separate designs: a phone experience with a bottom bar and a wide desktop experience, and it can be installed as an app.">بالتأكيد — للموقع تصميمان منفصلان: تجربة هاتف بشريط سفلي وتجربة كمبيوتر واسعة، ويمكن تثبيته كتطبيق.</div></details>
       </div>
     </section>
 
     <section class="home-sec" style="text-align:center;padding-top:6px">
-      <h2 class="reveal">جاهز للبدء؟</h2>
-      <p class="sub reveal">أنشئ أول بروفايل أو مدونة على elgoharyX الآن — مجاناً.</p>
-      <div class="home-cta reveal"><a class="btn primary" href="create-profile.html">ابدأ الآن مجاناً</a></div>
+      <h2 class="reveal" data-en="Ready to start?">جاهز للبدء؟</h2>
+      <p class="sub reveal" data-en="Create your first profile or blog on elgoharyX now — for free.">أنشئ أول بروفايل أو مدونة على elgoharyX الآن — مجاناً.</p>
+      <div class="home-cta reveal"><a class="btn primary" href="create-profile.html" data-en="Start Now for Free">ابدأ الآن مجاناً</a></div>
       <div class="home-links">
-        <a href="explore.html">استكشف المدونات</a>
-        <a href="create-profile.html">أنشئ بروفايل</a>
-        <a href="create-blog.html">أنشئ مدونة</a>
-        <a href="about.html">عن الموقع</a>
-        <a href="how-to.html">كيفية الاستخدام</a>
-        <a href="privacy.html">سياسة الخصوصية</a>
-        <a href="support.html">الدعم</a>
+        <a href="explore.html" data-en="Explore Blogs">استكشف المدونات</a>
+        <a href="create-profile.html" data-en="Create Profile">أنشئ بروفايل</a>
+        <a href="create-blog.html" data-en="Create Blog">أنشئ مدونة</a>
+        <a href="about.html" data-en="About">عن الموقع</a>
+        <a href="how-to.html" data-en="How to Use">كيفية الاستخدام</a>
+        <a href="privacy.html" data-en="Privacy Policy">سياسة الخصوصية</a>
+        <a href="support.html" data-en="Support">الدعم</a>
       </div>
     </section>
   </main>
