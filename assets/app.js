@@ -775,7 +775,8 @@ const auth = getAuth(app);
       : `<button class="btn ghost" data-act="mode" title="الوضع" style="padding:9px 12px">${modeIcon()}</button>
          <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">استكشف المدونات</a>
          <a class="btn ghost" href="${urlLogin()}" style="padding:9px 16px;font-size:13px">تسجيل الدخول</a>`;
-    return `<div class="appbar">
+    const premiumCls = (currentUser && currentUser.premium) ? ' ab-premium' : '';
+    return `<div class="appbar${premiumCls}">
       <a class="brand" href="${urlHome()}" style="text-decoration:none;color:inherit"><span class="mark"><img src="${LOGO}" alt="elgoharyX"/></span>
         Academic Profiles <span class="ar">· منشئ البروفايلات</span></a>
       <div class="ab-right">${right}</div>
@@ -2875,6 +2876,8 @@ const auth = getAuth(app);
   const AD_OFF_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 4 16 16"/></svg>';
   const PK_LINK_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>';
   const PK_STAR_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 17l-5.3 2.6 1.1-6L3.4 9.4l6-.8L12 3Z"/></svg>';
+  const PK_APP_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M12 7v6"/><path d="m9.5 11 2.5 2.5L14.5 11"/><path d="M11 18h2"/></svg>';
+  const PK_BAR_IC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="2"/><path d="M6.5 6.5h4"/><circle cx="17" cy="6.5" r="1"/><rect x="3" y="12" width="18" height="8" rx="2"/></svg>';
 
   /* ======================================================================
      NOTIFICATIONS — site announcements (bell), subscribe, + email delivery
@@ -3060,15 +3063,23 @@ const auth = getAuth(app);
         <h1>الاشتراك المميز</h1>
         <p>استمتع بتجربة <b>بلا إعلانات نهائيًا</b> على كامل الموقع، واحصل على شارة «عضو مميز»، وإزالة علامة elgoharyX من روابطك، ومزايا حصرية قادمة.</p></div>
       ${statusHtml}
+      <div class="pm-perks-msg">
+        <span class="pm-pm-badge">${CROWN} كل مزايا العضوية المميزة</span>
+        <p>عند اشتراكك تفتح لك هذه المزايا كاملةً على حسابك مباشرةً — إليك كل ما ستحصل عليه:</p>
+      </div>
       <div class="pm-perks">
         <div class="pm-perk feature"><span class="pm-pk-ic">${AD_OFF_IC}</span>
           <div><b>بلا إعلانات نهائيًا</b><span>تصفّح الموقع كله — المدونات والبروفايلات — دون أي إعلان يقاطعك.</span></div></div>
+        <div class="pm-perk feature"><span class="pm-pk-ic">${PK_APP_IC}</span>
+          <div><b>حوّل مدونتك إلى تطبيق <span class="pm-new">جديد</span></b><span>ثبّت مدونتك كتطبيق مستقل على شاشة الهاتف والكمبيوتر — فتح فوري وعمل دون اتصال، بلا متجر تطبيقات.</span></div></div>
+        <div class="pm-perk feature"><span class="pm-pk-ic">${PK_BAR_IC}</span>
+          <div><b>شريط أدوات احترافي للكمبيوتر <span class="pm-new">جديد</span></b><span>واجهة علوية أنيقة مميّزة بلمسة ذهبية وتنقّل أوضح — تجربة أرقى على شاشة الكمبيوتر.</span></div></div>
         <div class="pm-perk"><span class="pm-pk-ic">${CROWN}</span>
           <div><b>شارة «عضو مميز»</b><span>تظهر على بروفايلك ومدونتك وتُميّزك عن غيرك.</span></div></div>
         <div class="pm-perk"><span class="pm-pk-ic">${PK_LINK_IC}</span>
           <div><b>روابط نظيفة باسمك</b><span>إزالة علامة elgoharyX من روابطك المشاركة.</span></div></div>
         <div class="pm-perk"><span class="pm-pk-ic">${PK_STAR_IC}</span>
-          <div><b>دعم الموقع + مزايا قادمة</b><span>أنت تدعم استمرار elgoharyX وتحصل على كل جديد أولًا.</span></div></div>
+          <div><b>أولوية الدعم + مزايا حصرية قادمة</b><span>أنت تدعم استمرار elgoharyX وتحصل على كل جديد أولًا.</span></div></div>
       </div>
       <div class="pm-price"><b>${price}</b><span>جنيه · لمدة 3 شهور</span>
         <div class="pm-note2">${price===PREMIUM.renew?'سعر التجديد':'سعر أول اشتراك'} — التجديد بعدها ${PREMIUM.renew} ج</div></div>

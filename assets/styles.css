@@ -1852,6 +1852,16 @@
   .pm-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--stroke);border-radius:12px;
     padding:13px 16px;margin:16px 0;font-size:13.5px;color:var(--muted)}
   .pm-status.ok{border-color:rgba(201,165,72,.5);background:color-mix(in srgb,var(--gold) 8%,transparent);color:var(--txt)}
+  /* رسالة مزايا الاشتراك المميز */
+  .pm-perks-msg{text-align:center;margin:22px 0 4px}
+  .pm-perks-msg .pm-pm-badge{display:inline-flex;align-items:center;gap:8px;font-family:"Space Grotesk",sans-serif;
+    font-size:14px;font-weight:700;color:var(--gold-2);border:1px solid rgba(201,165,72,.45);border-radius:100px;
+    padding:8px 18px;background:color-mix(in srgb,var(--gold) 9%,transparent);box-shadow:0 8px 24px -14px rgba(201,165,72,.7)}
+  .pm-perks-msg .pm-pm-badge svg{width:17px;height:17px;fill:currentColor}
+  .pm-perks-msg p{color:var(--muted);font-size:13.5px;line-height:1.85;max-width:52ch;margin:12px auto 0}
+  .pm-new{display:inline-block;font-family:"Space Grotesk",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.5px;
+    color:#1a1300;background:linear-gradient(135deg,var(--gold),var(--gold-2));border-radius:6px;padding:1px 7px;
+    margin-inline-start:6px;vertical-align:middle}
   /* مزايا الاشتراك المميز */
   .pm-perks{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
   .pm-perk{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--stroke);border-radius:14px;
@@ -2181,3 +2191,70 @@
   /* أخفِ قسم الإعلان في الصفحة الرئيسية تمامًا ما لم يظهر إعلان فعلي (لا فراغات) */
   .elg-ad-sec:has(.elg-ad:not([data-done])){display:none}
   .elg-ad-sec:has(ins[data-ad-status="unfilled"]){display:none}
+
+  /* ============ شريط أدوات احترافي (Desktop appbar) ============ */
+  @media(min-width:721px){
+    .appbar{padding-top:12px;padding-bottom:12px}
+    .ab-right{display:flex;align-items:center;gap:10px}
+    /* مجموعة تنقّل مدمجة (segmented control) */
+    .ab-nav{display:inline-flex;align-items:center;gap:2px;padding:4px;border-radius:100px;
+      border:1px solid var(--stroke-soft);background:color-mix(in srgb,var(--txt) 4%,transparent);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+    .ab-nav .btn.ghost{border-color:transparent!important;background:transparent;color:var(--muted);
+      border-radius:100px;padding:8px 14px!important;font-weight:600;
+      transition:background .18s var(--ease),color .18s,transform .15s}
+    .ab-nav .btn.ghost:hover{background:color-mix(in srgb,var(--txt) 8%,transparent);color:var(--txt)}
+    /* الزر النشط (يُضبط عبر ستايل مضمّن يحوي المتغيّر الذهبي) */
+    .ab-nav .btn.ghost[style*="--gold"]{background:color-mix(in srgb,var(--gold) 16%,transparent)!important;
+      color:var(--txt)!important;box-shadow:inset 0 0 0 1px rgba(201,165,72,.35)}
+    .ab-nav .ab-vip{color:var(--gold-2)!important}
+    .ab-nav .ab-vip:hover{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+    /* أزرار الأيقونات الدائرية (الوضع/الجرس) */
+    .appbar .ab-only,.appbar .ab-bell{width:40px;height:40px;padding:0!important;border-radius:50%!important;
+      display:grid;place-items:center}
+    /* شريحة المستخدم */
+    .user-chip{border:1px solid var(--stroke);border-radius:100px;padding:5px 12px 5px 6px;gap:9px;
+      background:color-mix(in srgb,var(--txt) 4%,transparent);transition:border-color .2s,background .2s}
+    a.user-chip:hover{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 8%,transparent)}
+    .brand{font-size:21px}
+  }
+  /* لمسة العضو المميّز على الشريط */
+  .appbar.ab-premium::after{opacity:1!important;height:2px;
+    background:linear-gradient(90deg,transparent,var(--gold),var(--gold-2),var(--gold),transparent)!important}
+  @media(min-width:721px){
+    .appbar.ab-premium .ab-nav{border-color:rgba(201,165,72,.35);
+      background:radial-gradient(320px 60px at 50% -20%,rgba(201,165,72,.12),transparent),color-mix(in srgb,var(--txt) 4%,transparent)}
+  }
+
+  /* ============ رسالة الاشتراك المنبثقة (promo) ============ */
+  .promo-pop{position:fixed;z-index:60;bottom:20px;inset-inline-start:20px;max-width:335px;width:calc(100% - 40px);
+    display:flex;gap:12px;align-items:flex-start;padding:16px 16px 16px 14px;border-radius:16px;
+    border:1px solid rgba(201,165,72,.4);background:linear-gradient(180deg,var(--panel),var(--bg-2));
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.72),0 0 0 1px rgba(201,165,72,.08);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    transform:translateY(150%);opacity:0;transition:transform .5s var(--ease),opacity .4s}
+  .promo-pop.show{transform:translateY(0);opacity:1}
+  .promo-pop .promo-ic{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));box-shadow:0 10px 24px -10px rgba(201,165,72,.7)}
+  .promo-pop .promo-body{display:flex;flex-direction:column;gap:3px;padding-inline-end:14px}
+  .promo-pop .promo-body b{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--txt)}
+  .promo-pop .promo-body span{color:var(--muted);font-size:12.5px;line-height:1.65}
+  .promo-pop .promo-cta{margin-top:10px;align-self:flex-start;text-decoration:none;font-weight:700;font-size:13px;
+    color:#1a1300;background:linear-gradient(135deg,var(--gold),var(--gold-2));padding:9px 18px;border-radius:10px;
+    box-shadow:0 8px 20px -10px rgba(201,165,72,.7);transition:transform .15s var(--ease)}
+  .promo-pop .promo-cta:hover{transform:translateY(-2px)}
+  .promo-pop .promo-x{position:absolute;top:8px;inset-inline-end:8px;width:26px;height:26px;border:none;cursor:pointer;
+    background:rgba(255,255,255,.06);color:var(--muted);border-radius:8px;font-size:19px;line-height:1;
+    display:grid;place-items:center;transition:.18s}
+  .promo-pop .promo-x:hover{background:rgba(255,255,255,.12);color:var(--txt)}
+  @media(max-width:600px){ .promo-pop{bottom:80px;inset-inline:14px;max-width:none;width:auto} }
+  @media(prefers-reduced-motion:reduce){ .promo-pop{transition:opacity .3s} }
+
+  /* ============ قسم فيديو الشرح ============ */
+  .video-wrap{max-width:880px;margin:0 auto;border-radius:18px;overflow:hidden;
+    border:1px solid var(--stroke);background:#04060c;position:relative;
+    box-shadow:0 44px 90px -42px rgba(0,0,0,.82),0 0 0 1px rgba(201,165,72,.12)}
+  .video-wrap::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;border-radius:inherit;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+  .video-wrap video{display:block;width:100%;height:auto;max-height:78vh;background:#04060c}
+  @media(max-width:600px){ .video-wrap{border-radius:14px} }
