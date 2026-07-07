@@ -21,6 +21,36 @@
       "imgbbKeys": {
         ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
         "$i": { ".validate": "newData.isString() && newData.val().length <= 200" }
+      },
+      "captchaKeys": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        "$i": { ".validate": "newData.isString() && newData.val().length <= 120" }
+      },
+      "dbUrls": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        "$i": { ".validate": "newData.isString() && newData.val().length <= 300" }
+      },
+      "emailKeys": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        "$i": {
+          ".validate": "newData.hasChildren(['publicKey','serviceId','templateId'])",
+          "publicKey":        { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "serviceId":        { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "templateId":       { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "notifyTemplateId": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 120)" },
+          "toEmail":          { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 160)" },
+          "$other":           { ".validate": false }
+        }
+      },
+      "maintenance": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        "site":     { ".validate": "newData.isBoolean()" },
+        "explore":  { ".validate": "newData.isBoolean()" },
+        "profiles": { ".validate": "newData.isBoolean()" },
+        "blogs":    { ".validate": "newData.isBoolean()" },
+        "premium":  { ".validate": "newData.isBoolean()" },
+        "msg":      { ".validate": "newData.isString() && newData.val().length <= 400" },
+        "$other":   { ".validate": false }
       }
     },
 
@@ -232,6 +262,44 @@
         "by":        { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 160)" },
         "createdAt": { ".validate": "newData.isNumber()" },
         "$other":    { ".validate": false }
+      }
+    },
+
+    "analytics": {
+      ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+      "total": { ".write": true, ".validate": "newData.isNumber()" },
+      "daily":     { "$d": { ".write": true, ".validate": "newData.isNumber()" } },
+      "countries": { "$c": { ".write": true, ".validate": "newData.isNumber()" } }
+    },
+
+    "presence": {
+      ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+      "$sid": {
+        ".write": true,
+        ".validate": "!newData.exists() || newData.hasChild('at')",
+        "at":   { ".validate": "newData.isNumber()" },
+        "name": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 60)" },
+        "uid":  { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 64)" },
+        "page": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)" },
+        "$other": { ".validate": false }
+      }
+    },
+
+    "referrals": {
+      ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+      "$ref": {
+        ".read": true,
+        "$uid": { ".write": true, ".validate": "newData.isNumber()" }
+      }
+    },
+
+    "referralRewards": {
+      ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+      "$uid": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        ".validate": "newData.hasChild('at')",
+        "at": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
       }
     },
 
