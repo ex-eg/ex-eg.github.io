@@ -216,7 +216,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   const videosArr =d=>Array.isArray(d.videos)?d.videos.map(ytId).filter(Boolean):[];
   const hasMedia  =d=>galleryArr(d).length>0||videosArr(d).length>0;
   const pfGallery=d=>{ const a=galleryArr(d); if(!a.length) return '';
-    return `<div class="pf-gallery">${a.map((u,i)=>`<a class="pf-gitem" href="${esc(u)}" target="_blank" rel="noopener" title="${t('عرض الصورة','View image')}"><img src="${esc(u)}" alt="${t('صورة','Image')} ${i+1}" loading="lazy" onerror="this.closest('.pf-gitem').remove()"/></a>`).join('')}</div>`; };
+    return `<div class="pf-gallery">${a.map((u,i)=>`<a class="pf-gitem" href="${esc(safeUrl(u)||'#')}" target="_blank" rel="noopener" title="${t('عرض الصورة','View image')}"><img src="${esc(safeUrl(u))}" alt="${t('صورة','Image')} ${i+1}" loading="lazy" onerror="this.closest('.pf-gitem').remove()"/></a>`).join('')}</div>`; };
   const pfVideos=d=>{ const a=videosArr(d); if(!a.length) return '';
     return `<div class="pf-videos">${a.map(id=>`<div class="pf-video"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="${t('فيديو يوتيوب','YouTube video')}" loading="lazy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`).join('')}</div>`; };
   const pfMedia=d=>{ if(!hasMedia(d)) return '';
@@ -1919,6 +1919,8 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   };
   /* strip tags → plain text (safe, no script execution) for excerpts & word counts */
   function stripHTML(html){ try{ return (new DOMParser().parseFromString(String(html||''),'text/html').body.textContent||'').replace(/\s+/g,' ').trim(); }catch{ return String(html||'').replace(/<[^>]*>/g,' '); } }
+  /* only accept http(s) URLs for use in href/src — blocks javascript:/data:/vbscript: and other schemes */
+  const safeUrl = u => { const v=String(u==null?'':u).replace(/^[\u0000-\u0020]+/,''); return /^https?:\/\//i.test(v) ? v : ''; };
   const blogReadTime = body => { const w=stripHTML(body).split(/\s+/).filter(Boolean).length; return Math.max(1,Math.round(w/180))+t(' دقائق قراءة',' min read'); };
   /* public post list — hides unpublished drafts (published===false). Posts with no
      flag (legacy) are treated as published. Admin/builder use the raw array instead. */
@@ -1972,8 +1974,8 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
           if(!RTE_ALLOWED[tag].includes(n)){ ch.removeAttribute(a.name); return; }
           if(n==='style' && !a.value.split(';').every(s=>!s.trim()||SAFE_STYLE.test(s.trim()))) ch.removeAttribute(a.name);
         });
-        if(ch.hasAttribute('href')){ const h=ch.getAttribute('href')||''; if(/^\s*(javascript|data|vbscript):/i.test(h)) ch.removeAttribute('href'); else { ch.setAttribute('target','_blank'); ch.setAttribute('rel','noopener noreferrer'); } }
-        if(ch.hasAttribute('src')){ const s=ch.getAttribute('src')||''; if(/^\s*(javascript|vbscript):/i.test(s)) ch.remove(); }
+        if(ch.hasAttribute('href')){ const h=ch.getAttribute('href')||''; const hn=h.replace(/[\u0000-\u0020]+/g,'').toLowerCase(); if(/^(javascript|data|vbscript):/.test(hn)) ch.removeAttribute('href'); else { ch.setAttribute('target','_blank'); ch.setAttribute('rel','noopener noreferrer'); } }
+        if(ch.hasAttribute('src')){ const s=ch.getAttribute('src')||''; const sn=s.replace(/[\u0000-\u0020]+/g,'').toLowerCase(); if(/^(javascript|vbscript|data):/.test(sn)) ch.remove(); }
         if(tag==='IFRAME'){ const s=ch.getAttribute('src')||''; if(!/^https:\/\/(www\.)?(youtube(-nocookie)?\.com|player\.vimeo\.com)\//i.test(s)){ ch.remove(); return; } ch.setAttribute('loading','lazy'); }
         walk(ch);
       });
@@ -3477,7 +3479,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         <input class="db-inp" dir="ltr" value="${esc(u)}" placeholder="https://your-backup-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:monospace;font-size:12px"/>
         <button type="button" class="btn del db-del" title="${t('حذف','Remove')}" style="padding:8px 12px;flex:0 0 auto">✕</button>
       </div>`;
-    const emailSetRow = (s={})=>`<div class="eml-row" style="border:1px solid var(--stroke);border-radius:12px;padding:12px;margin-bottom:10px;position:relative">
+    const emailSetRow = (s={})=>`<div class="eml-row" style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative">
         <button type="button" class="btn del eml-del" title="${t('حذف','Remove')}" style="position:absolute;top:8px;inset-inline-end:8px;padding:4px 10px">✕</button>
         <div class="field"><label>Public Key</label><input class="eml-pk" dir="ltr" value="${esc(s.publicKey||'')}" autocomplete="off"/></div>
         <div class="field"><label>Service ID</label><input class="eml-sv" dir="ltr" value="${esc(s.serviceId||'')}" autocomplete="off"/></div>
@@ -3678,7 +3680,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     /* ----- Maintenance ----- */
     async function renderMaintTab(el){
       const cfg = await loadMaintenance() || {};
-      const row=(key,label,danger)=>`<label class="mnt-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--stroke)">
+      const row=(key,label,danger)=>`<label class="mnt-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)">
           <span style="${danger?'font-weight:700':''}">${label}</span>
           <input type="checkbox" data-mnt="${key}" ${cfg[key]?'checked':''} style="width:20px;height:20px;flex:0 0 auto;accent-color:var(--gold);cursor:pointer"/>
         </label>`;
@@ -3701,7 +3703,6 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         const m=($('#mntMsg').value||'').trim(); if(m) out.msg=m.slice(0,400);
         const note=$('#mntNote'); sv.disabled=true; const old=sv.textContent; sv.textContent=t('جارٍ الحفظ…','Saving…');
         try{ await set(ref(db,'config/maintenance'), out); maintCfg=out;
-          try{ sessionStorage.setItem(MAINT_KEY, JSON.stringify(out)); }catch(e){}
           note.className='pm-note ok'; note.textContent=t('تم حفظ إعدادات الصيانة ✓','Maintenance settings saved ✓');
         }catch(e){ console.error(e); note.className='pm-note'; note.textContent=t('تعذّر الحفظ — تأكد أنك أدمن (Google) وأن القواعد المحدّثة منشورة','Failed to save — make sure you are the admin (Google) and the updated rules are published'); }
         sv.disabled=false; sv.textContent=old;
@@ -3726,7 +3727,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       const flag=cc=>/^[A-Z]{2}$/.test(cc)?cc.replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt(0))):'🌐';
       const cRows=cList.length?cList.map(x=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
           <span style="width:52px">${flag(x[0])} ${esc(x[0])}</span>
-          <div style="flex:1;background:var(--stroke);border-radius:6px;overflow:hidden;height:10px"><div style="height:100%;width:${Math.round(x[1]/maxC*100)}%;background:var(--gold)"></div></div>
+          <div style="flex:1;background:var(--line);border-radius:6px;overflow:hidden;height:10px"><div style="height:100%;width:${Math.round(x[1]/maxC*100)}%;background:var(--gold)"></div></div>
           <b style="width:44px;text-align:end">${x[1]}</b>
         </div>`).join(''):`<div class="pm-note">${t('لا توجد بيانات دول بعد','No country data yet')}</div>`;
       const stat=(v,l)=>`<div class="panel" style="flex:1;min-width:130px;text-align:center;padding:16px"><div style="font-size:28px;font-weight:800;color:var(--gold)">${v}</div><div class="sub">${l}</div></div>`;
@@ -3755,7 +3756,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         const act=$('#anaActive'); if(act) act.textContent=live.length;
         const box=$('#anaOnline'); if(box){
           box.innerHTML = live.length
-            ? live.sort((m,n)=>n.at-m.at).map(pp=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--stroke)">
+            ? live.sort((m,n)=>n.at-m.at).map(pp=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
                 <span>${esc(pp.name||t('زائر','Visitor'))}</span><span class="sub" style="font-size:12px">${esc(pp.page||'')}</span></div>`).join('')
             : `<div class="pm-note">${t('لا أحد متصل الآن','No one online right now')}</div>`;
         }
@@ -3788,13 +3789,13 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       const eligible=rows.filter(r=>r.count>=goal && !rewards[r.uid]);
       const card=(inner,title)=>`<div class="panel" style="padding:18px;margin-bottom:16px"><h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:12px">${title}</h3>${inner}</div>`;
       const eligHtml = eligible.length
-        ? eligible.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--stroke)">
+        ? eligible.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)">
             <span><b>${esc(nameOf(r.uid))}</b> <span class="sub">— ${r.count} ${t('دعوة','referrals')}</span></span>
             <button class="btn primary" data-grant-ref="${esc(r.uid)}" style="flex:0 0 auto;padding:7px 14px">${t('منح بريميوم يوم','Grant 1-day premium')}</button>
           </div>`).join('')
         : `<div class="pm-note">${t('لا أحد مؤهَّل للمكافأة الآن','No one is eligible for a reward right now')}</div>`;
       const allHtml = rows.length
-        ? rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--stroke)">
+        ? rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
             <span>${esc(nameOf(r.uid))}</span>
             <span class="sub">${r.count}/${goal}${rewards[r.uid]?' · '+t('كوفئ ✓','rewarded ✓'):''}</span>
           </div>`).join('')
@@ -3934,7 +3935,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       const pending=list.filter(r=>r.status==='pending').length;
       const rows=list.length?list.map(r=>`
         <div class="adm-req ${esc(r.status||'pending')}">
-          <a class="adm-shot" href="${esc(r.screenshot||'#')}" target="_blank">${r.screenshot?`<img src="${esc(r.screenshot)}" alt="${t('إيصال','Receipt')}" loading="lazy"/>`:`<span>${t('لا صورة','No image')}</span>`}</a>
+          <a class="adm-shot" href="${esc(safeUrl(r.screenshot)||'#')}" target="_blank">${safeUrl(r.screenshot)?`<img src="${esc(safeUrl(r.screenshot))}" alt="${t('إيصال','Receipt')}" loading="lazy"/>`:`<span>${t('لا صورة','No image')}</span>`}</a>
           <div class="adm-info">
             <div class="adm-top"><b>${esc(r.username||t('مستخدم','User'))}</b><span class="adm-amt">${Number(r.amount)||0} ${t('ج','EGP')}</span><span class="adm-badge ${esc(r.status||'pending')}">${r.status==='approved'?t('مفعّل','Approved'):r.status==='rejected'?t('مرفوض','Rejected'):t('قيد المراجعة','Pending')}</span></div>
             <div class="adm-meta">${esc(r.email||'')} · ${r.method==='etisalat'?t('اتصالات كاش','Etisalat Cash'):t('انستا باي','InstaPay')} · ${fmtDay(r.createdAt)}</div>
@@ -4026,11 +4027,11 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       if(!email){ toast(t('هذا المستخدم بلا بريد','This user has no email')); return; }
       const title=prompt(t('عنوان الإشعار:','Notification title:')); if(title===null||!title.trim()) return;
       const body=(prompt(t('نص الإشعار (اختياري):','Notification text (optional):'))||'').trim();
-      const ttl=title.trim();
+      const t=title.trim();
       emailToUid(email.toLowerCase()).then(uid=>{ const id=shortId(14);
-        set(ref(db,'announcements/'+id),{ title:ttl.slice(0,140), body:body.slice(0,1000), uid:uid||'all', by:(currentUser.email||'admin'), createdAt:Date.now() }).catch(()=>{});
+        set(ref(db,'announcements/'+id),{ title:t.slice(0,140), body:body.slice(0,1000), uid:uid||'all', by:(currentUser.email||'admin'), createdAt:Date.now() }).catch(()=>{});
       });
-      sendUserEmail(email,ttl,body,name).then(ok=>toast(ok?(curLang()==='en'?'Notification and email sent ✓':'تم إرسال الإشعار والبريد ✓'):(curLang()==='en'?'Notification published (enable EmailJS for email)':'تم نشر الإشعار (فعّل EmailJS للبريد)')));
+      sendUserEmail(email,t,body,name).then(ok=>toast(ok?(curLang()==='en'?'Notification and email sent ✓':'تم إرسال الإشعار والبريد ✓'):(curLang()==='en'?'Notification published (enable EmailJS for email)':'تم نشر الإشعار (فعّل EmailJS للبريد)')));
     }
 
     $('#app').innerHTML = shell(busy()); wireAppbar(); wireTabs();
@@ -4123,9 +4124,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
      premium:bool, msg:string }. When a section (or the whole site) is on, every
      visitor to it sees a maintenance page — except the admin, who always passes. */
   let maintCfg=null;
-  const MAINT_KEY='apb_maint';   // session cache — read the DB once per session, later pages are instant
   async function loadMaintenance(){
-    try{ const c=sessionStorage.getItem(MAINT_KEY); if(c!==null){ maintCfg=JSON.parse(c)||{}; return maintCfg; } }catch(e){}
     // fail-open with a timeout: never let a slow/failed read block the whole page render
     try{
       const s=await Promise.race([
@@ -4134,7 +4133,6 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       ]);
       maintCfg = s.exists()? (s.val()||{}) : {};
     }catch(e){ maintCfg = {}; }
-    try{ sessionStorage.setItem(MAINT_KEY, JSON.stringify(maintCfg)); }catch(e){}
     return maintCfg;
   }
   const MAINT_SECTION = {
@@ -4180,10 +4178,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     if(!isAdmin()) return;
     const on=maintActiveList(); if(!on.length) return;
     const b=document.createElement('div'); b.id='maintBanner';
-    // sticky strip at the very top of the flow → takes its own space, never overlaps the app bar
-    b.style.cssText='position:sticky;top:0;z-index:10000;background:#b91c1c;color:#fff;padding:7px 14px;text-align:center;font-size:12.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:#b91c1c;color:#fff;padding:7px 14px;text-align:center;font-size:12.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)';
     b.textContent='🛠️ '+t('وضع الصيانة مفعّل على: ','Maintenance active on: ')+on.join('، ')+' — '+t('الزوّار يرون صفحة الصيانة (أنت تتخطاها كأدمن)','visitors see the maintenance page (you bypass it as admin)');
-    document.body.insertBefore(b, document.body.firstChild);
+    document.body.appendChild(b);
   }
   /* route() wrapped with the maintenance gate — used by init() on every page load */
   async function routeGuarded(){

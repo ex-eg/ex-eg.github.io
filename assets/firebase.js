@@ -46,7 +46,7 @@ const app = initializeApp(firebaseConfig);
    before any DB read, and an enforced App Check would block reading the key from
    the DB — so localStorage, not a live DB read, is the source here). The first
    key is the active one; the rest are spares the admin can promote. */
-const DEFAULT_CAPTCHA_KEYS = ['6LdjuUUtAAAAAG9D85LTSaK0HM5UoIrzgHnHB5DG'];
+const DEFAULT_CAPTCHA_KEYS = ['6Lf8MEktAAAAANMCvGRCqGGMc2WvfL_0ZPsPHqxq'];
 export function captchaKeys(){
   try{ const s = localStorage.getItem('apb_captcha_keys'); if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.filter(Boolean).length) return a.filter(Boolean); } }catch(e){}
   return DEFAULT_CAPTCHA_KEYS.slice();
@@ -191,8 +191,18 @@ export async function update(r, values){
   return writeActive(i => fbUpdate(fbRef(dbs[i], path), values));
 }
 export async function remove(r){
-  if(dbs.length === 1) return fbRemove(r);
   const path = pathOf(r);
+  /* SAFETY GUARD — every legitimate delete targets a SPECIFIC record and has at
+     least 2 path segments (e.g. "profiles/<id>", "users/<uid>", "config/adminGate").
+     A shorter path — the root ("") or a whole top-level collection ("profiles",
+     "users", …) — can only come from a bug such as an empty/undefined id. Refuse it
+     so a single bad delete can NEVER wipe a collection or the entire database. */
+  const segs = String(path).split('/').filter(Boolean);
+  if(segs.length < 2){
+    const msg = 'remove blocked: refusing to delete top-level path "' + path + '"';
+    console.error(msg); throw new Error(msg);
+  }
+  if(dbs.length === 1) return fbRemove(fbRef(primaryDb, path));
   await Promise.all(dbs.map(d => withTimeout(fbRemove(fbRef(d, path)).catch(() => {}), 8000, null)));   // a record may be in any DB
 }
 /* config writes: the PRIMARY must succeed (rules everywhere read config/adminEmail),
