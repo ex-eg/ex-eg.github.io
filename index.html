@@ -199,6 +199,7 @@
     <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="mark"><img src="https://i.ibb.co/1t1TCvH7/103777.png" alt="elgoharyX"/></span>
       Academic Profiles <span class="ar" data-en="· Profile Builder">· منشئ البروفايلات</span></a>
     <div class="ab-right">
+      <a class="btn ghost" id="hubLink" href="hub.html" style="padding:9px 15px;font-size:13px;display:none" data-en="My Hub">لوحتي</a>
       <a class="btn ghost" href="explore.html" style="padding:9px 15px;font-size:13px" data-en="Explore Blogs">استكشف المدونات</a>
       <a class="btn ghost" href="create-profile.html" style="padding:9px 15px;font-size:13px" data-en="Create Profile">أنشئ بروفايل</a>
       <a class="btn ghost" id="acctLink" href="login.html" style="padding:9px 16px;font-size:13px" data-en="Log in">تسجيل الدخول</a>
@@ -217,6 +218,7 @@
       </div>
       <nav class="drawer-nav">
         <a class="dr-item" id="hAcct" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6"/></svg><span>تسجيل الدخول</span></a>
+        <a class="dr-item" id="hHub" href="hub.html" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span data-en="My Hub — profiles & blogs">لوحتي — بروفايلاتي ومدوناتي</span></a>
         <a class="dr-item" href="explore.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg><span data-en="Explore Blogs">استكشف المدونات</span></a>
         <a class="dr-item" href="create-profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-en="Create Profile">أنشئ بروفايل</span></a>
         <a class="dr-item" href="create-blog.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-en="Create Blog">أنشئ مدونة</span></a>
@@ -241,6 +243,7 @@
         <h1 data-en="Build your &lt;span class=&quot;grad-text&quot;&gt;academic profile&lt;/span&gt;&lt;br&gt;and &lt;span class=&quot;grad-text&quot;&gt;online blog&lt;/span&gt; and share them with a link">أنشئ <span class="grad-text">بروفايلك الأكاديمي</span><br>و<span class="grad-text">مدونتك الإلكترونية</span> وشاركهما برابط</h1>
         <p class="lead" data-en="A free platform that builds you a professional academic ID card and an elegant online blog in minutes — with 100+ profile layouts, 50 blog designs, an article editor that supports code blocks, and two separate designs for phone and desktop.">منصّة عربية مجانية تصنع لك بطاقة تعريف أكاديمية احترافية ومدونة إلكترونية أنيقة في دقائق — بأكثر من 100 تخطيط للبروفايل و50 تصميماً للمدونة، ومحرّر مقالات يدعم الأكواد البرمجية، وتصميمين منفصلين للهاتف والكمبيوتر.</p>
         <div class="home-cta">
+          <a class="btn gold" id="hubCta" href="hub.html" style="display:none" data-en="My Hub — profiles &amp; blogs">لوحتي — بروفايلاتي ومدوناتي</a>
           <a class="btn primary" href="create-profile.html" data-en="Create a Profile Now">أنشئ بروفايلاً الآن</a>
           <a class="btn gold" href="create-blog.html" data-en="Create your Blog">أنشئ مدونتك</a>
           <a class="btn ghost" href="explore.html" data-en="Explore Blogs">استكشف المدونات</a>
@@ -384,6 +387,9 @@
     try{ if(localStorage.getItem('apb_session_uid')){
       var a=document.getElementById('acctLink'); if(a){ a.setAttribute('data-ar','حسابي'); a.setAttribute('data-en','My account'); a.textContent=(localStorage.getItem('apb_lang')==='en'?'My account':'حسابي'); a.href='my-profiles.html'; }
       var ha=document.getElementById('hAcct'); if(ha){ var hs=ha.querySelector('span'); hs.setAttribute('data-ar','حسابي'); hs.setAttribute('data-en','My account'); hs.textContent=(localStorage.getItem('apb_lang')==='en'?'My account':'حسابي'); ha.href='my-profiles.html'; }
+      var hl=document.getElementById('hubLink'); if(hl) hl.style.display='';
+      var hh=document.getElementById('hHub'); if(hh) hh.style.display='';
+      var hc=document.getElementById('hubCta'); if(hc) hc.style.display='';
     } }catch(e){}
     // mobile side menu (drawer)
     (function(){
