@@ -2415,3 +2415,13 @@
     .adm-head h2{ font-size:24px; }
     .adm-head-user{ display:none; }
   }
+
+  /* light-mode: admin surfaces (bare white tints are invisible on a light bg) */
+  html[data-mode="light"] .adm-req,
+  html[data-mode="light"] .adm-user,
+  html[data-mode="light"] .adm-citem,
+  html[data-mode="light"] .adm-nrow,
+  html[data-mode="light"] .pm-card,
+  html[data-mode="light"] .adm-search input{ background:rgba(18,28,48,.045); }
+  html[data-mode="light"] .adm-badge{ background:rgba(18,28,48,.07); }
+  html[data-mode="light"] .adm-head{ background:linear-gradient(135deg,#fbf7ee 0%,#fff 58%); }
