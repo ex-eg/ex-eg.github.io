@@ -87,6 +87,20 @@ const primaryDb = dbs[0];
 /* a read/write must never hang the app on a slow/unreachable backup */
 const withTimeout = (p, ms, fallback) => Promise.race([ p, new Promise(res => setTimeout(() => res(fallback), ms)) ]);
 
+/* health: a backup that times out on a read is DISABLED for the rest of the session
+   (the primary, index 0, is never disabled). So a slow/broken backup costs at most
+   one short timeout, after which the app runs at full single-DB speed. */
+const READ_MS = 3500;
+const deadBackup = new Set();
+function liveIdx(){ return dbs.map((_, i) => i).filter(i => i === 0 || !deadBackup.has(i)); }
+function readTimed(i, path){
+  let timedOut = false;
+  return Promise.race([
+    fbGet(fbRef(dbs[i], path)).catch(() => null),
+    new Promise(res => setTimeout(() => { timedOut = true; res(null); }, READ_MS))
+  ]).then(s => { if(timedOut && i !== 0){ deadBackup.add(i); console.warn('elgoharyX: backup DB', URLS[i], 'is slow — disabled for this session'); } return s; });
+}
+
 /* active write DB index (persisted so overflow writes keep going to the backup) */
 let _activeWrite = 0;
 try{ const s = localStorage.getItem('apb_db_active'); if(s!=null){ const i = parseInt(s,10); if(i>=0 && i<dbs.length) _activeWrite = i; } }catch(e){}
@@ -150,9 +164,10 @@ export function ref(_db, path){ return path === undefined ? fbRef(primaryDb) : f
 export function child(r, path){ return fbChild(r, path); }
 
 export async function get(r){
-  if(dbs.length === 1) return fbGet(r);                        // fast path — untouched single-DB behaviour
+  const live = (dbs.length === 1) ? [0] : liveIdx();
+  if(live.length === 1) return fbGet(r);                       // fast path — real snapshot, single-DB speed
   const path = pathOf(r);
-  const snaps = await Promise.all(dbs.map(d => withTimeout(fbGet(fbRef(d, path)).catch(() => null), 7000, null)));
+  const snaps = await Promise.all(live.map(i => readTimed(i, path)));
   const vals = snaps.map(s => (s && s.exists()) ? s.val() : null);
   const merged = mergeValues(vals);
   const key = path ? path.split('/').filter(Boolean).pop() || null : null;
