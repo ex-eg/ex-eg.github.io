@@ -2332,3 +2332,71 @@
   .lang-toggle:hover{color:var(--gold-2);border-color:var(--gold-2)}
   .lang-toggle svg{width:18px;height:18px}
   .lang-toggle .lt-label{min-width:15px;text-align:center;letter-spacing:.5px}
+
+  /* ============================================================
+     ADMIN — professional dashboard layout (sidebar + polish)
+     Pure CSS over the existing markup; uses theme tokens so it
+     adapts to light/dark automatically.
+     ============================================================ */
+  .adm-wrap{ display:grid; grid-template-columns:248px minmax(0,1fr);
+    grid-template-areas:"head head" "nav body"; gap:22px 26px; align-items:start;
+    max-width:1180px; margin-inline:auto; }
+
+  /* header */
+  .adm-head{ grid-area:head; display:flex; justify-content:space-between; align-items:flex-end;
+    gap:18px; flex-wrap:wrap; padding:22px 24px; border:1px solid var(--stroke); border-radius:20px;
+    background:linear-gradient(135deg, color-mix(in srgb,var(--gold) 11%, var(--panel)) 0%, var(--panel) 58%);
+    box-shadow:var(--elev-1); position:relative; overflow:hidden; }
+  .adm-head::before{ content:""; position:absolute; inset-block:0; inset-inline-start:0; width:4px; background:var(--grad-gold); }
+  .adm-badge-pill{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--gold-2); background:color-mix(in srgb,var(--gold) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--gold) 30%,transparent); padding:4px 12px; border-radius:100px; margin-bottom:11px; }
+  .adm-head h2{ font-family:"Cormorant Garamond",serif; font-size:30px; font-weight:600; line-height:1.04; color:var(--txt); }
+  .adm-head .sub{ color:var(--muted); font-size:13px; margin-top:6px; max-width:54ch; }
+  .adm-head-user{ display:flex; align-items:center; gap:11px; padding:8px 16px 8px 8px;
+    border:1px solid var(--stroke); border-radius:100px; background:var(--glass); backdrop-filter:blur(8px); }
+  .adm-head-id b{ display:block; font-size:13.5px; color:var(--txt); line-height:1.2; }
+  .adm-head-id span{ display:block; font-size:11.5px; color:var(--muted-2); direction:ltr; }
+  .adm-head-av{ width:38px!important; height:38px!important; }
+
+  /* sidebar nav */
+  .adm-tabs{ grid-area:nav; display:flex; flex-direction:column; gap:4px; padding:10px; margin:0;
+    border:1px solid var(--stroke); border-radius:18px; background:var(--panel);
+    box-shadow:var(--elev-1); position:sticky; top:82px; }
+  .adm-tab{ display:flex; align-items:center; gap:11px; width:100%; justify-content:flex-start; text-align:start;
+    border:1px solid transparent; background:transparent; color:var(--muted); cursor:pointer; font-family:inherit;
+    font-weight:600; font-size:13.5px; padding:11px 13px; border-radius:12px; transition:.16s var(--ease); position:relative; }
+  .adm-tab .adm-tab-ic{ display:inline-flex; width:20px; height:20px; flex:0 0 auto; opacity:.8; }
+  .adm-tab .adm-tab-ic svg{ width:20px; height:20px; }
+  .adm-tab:hover{ color:var(--txt); background:var(--stroke-soft); border-color:transparent; transform:none; }
+  .adm-tab.on{ color:var(--txt); background:color-mix(in srgb,var(--gold) 14%,transparent);
+    border-color:color-mix(in srgb,var(--gold) 34%,transparent); }
+  .adm-tab.on .adm-tab-ic{ color:var(--gold-2); opacity:1; }
+  .adm-tab.on::before{ content:""; position:absolute; inset-inline-start:0; top:50%; transform:translateY(-50%);
+    width:3px; height:56%; border-radius:0 3px 3px 0; background:var(--grad-gold); }
+
+  .adm-body{ grid-area:body; min-width:0; }
+
+  /* refined overview stat cards */
+  .adm-stats{ grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); }
+  .adm-stat{ border-radius:18px; padding:22px 18px; box-shadow:var(--elev-1); position:relative; overflow:hidden; }
+  .adm-stat::after{ content:""; position:absolute; top:0; inset-inline:0; height:3px; background:var(--grad-gold); opacity:0; transition:.2s var(--ease); }
+  .adm-stat:hover{ transform:translateY(-3px); }
+  .adm-stat:hover::after{ opacity:1; }
+  .adm-stat b{ font-size:34px; }
+
+  /* settings/config cards inside the admin get a touch more elevation */
+  .adm-body .panel{ box-shadow:var(--elev-1); }
+
+  /* mobile: sidebar becomes a scrollable top tab strip */
+  @media(max-width:900px){
+    .adm-wrap{ grid-template-columns:1fr; grid-template-areas:"head" "nav" "body"; gap:16px; }
+    .adm-tabs{ flex-direction:row; overflow-x:auto; position:static; padding:8px; gap:6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .adm-tabs::-webkit-scrollbar{ display:none; }
+    .adm-tab{ width:auto; flex:0 0 auto; }
+    .adm-tab .adm-tab-lb{ white-space:nowrap; }
+    .adm-tab.on::before{ display:none; }
+    .adm-head{ padding:18px 20px; }
+    .adm-head h2{ font-size:24px; }
+    .adm-head-user{ display:none; }
+  }

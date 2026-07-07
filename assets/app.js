@@ -3453,10 +3453,28 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     let admTimer=null;   // auto-refresh interval for the active-now list (analytics tab)
     const TABS=[['overview',t('نظرة عامة','Overview')],['analytics',t('التحليلات','Analytics')],['users',t('المستخدمون','Users')],['profiles',t('البروفايلات','Profiles')],
       ['blogs',t('المدونات','Blogs')],['payments',t('المدفوعات','Payments')],['referrals',t('الدعوات','Referrals')],['notify',t('الإشعارات','Notifications')],['maintenance',t('الصيانة','Maintenance')],['config',t('الإعدادات','Settings')]];
+    const TAB_IC = {
+      overview:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+      analytics:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg>',
+      users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 6.2A3 3 0 0 1 16 12M20.5 19c0-2.3-1.4-4-3.5-4.6"/></svg>',
+      profiles:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="10" r="2.2"/><path d="M5 17c.5-1.8 2-2.8 3.5-2.8s3 1 3.5 2.8"/><path d="M14.5 9h4M14.5 13h4"/></svg>',
+      blogs:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 12h6M9 16h6"/></svg>',
+      payments:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19"/><path d="M6 15h4"/></svg>',
+      referrals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="5" rx="1.5"/><path d="M5 13v8h14v-8M12 8v13"/><path d="M12 8S10.5 3.5 8 4.5 9 8 12 8ZM12 8s1.5-4.5 4-3.5S15 8 12 8Z"/></svg>',
+      notify:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+      maintenance:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.7 2.7-2.3-.6-.6-2.3Z"/></svg>',
+      config:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/></svg>'
+    };
     const shell=(inner)=> appbar('admin') + `<div class="wrap adm-wrap">
-      <div class="mp-head"><div><h2>${t('لوحة تحكّم الأدمن','Admin Dashboard')}</h2>
-        <div class="sub">${t('راقب وتحكّم في الموقع بالكامل — المستخدمون، المحتوى، الاشتراكات، والإشعارات.','Monitor and control the whole site — users, content, subscriptions, and notifications.')}</div></div></div>
-      <div class="adm-tabs">${TABS.map(t=>`<button class="adm-tab ${TAB_ID===t[0]?'on':''}" data-tab="${t[0]}">${t[1]}</button>`).join('')}</div>
+      <header class="adm-head">
+        <div class="adm-head-main">
+          <span class="adm-badge-pill">${t('لوحة التحكّم','Control Panel')}</span>
+          <h2>${t('لوحة تحكّم الأدمن','Admin Dashboard')}</h2>
+          <div class="sub">${t('راقب وتحكّم في الموقع بالكامل — المستخدمون، المحتوى، الاشتراكات، والإشعارات.','Monitor and control the whole site — users, content, subscriptions, and notifications.')}</div>
+        </div>
+        <div class="adm-head-user">${userAvatar('avatar-sm adm-head-av')}<div class="adm-head-id"><b>${esc(currentUser.username||t('الأدمن','Admin'))}</b><span>${esc(currentUser.email||'')}</span></div></div>
+      </header>
+      <nav class="adm-tabs">${TABS.map(tb=>`<button class="adm-tab ${TAB_ID===tb[0]?'on':''}" data-tab="${tb[0]}"><span class="adm-tab-ic">${TAB_IC[tb[0]]||''}</span><span class="adm-tab-lb">${tb[1]}</span></button>`).join('')}</nav>
       <div class="adm-body" id="admBody">${inner}</div>
     </div>` + drawer('admin');
     const busy = ()=>`<div class="pm-note" style="text-align:center;padding:34px 0">${t('جارٍ التحميل…','Loading…')}</div>`;
@@ -3963,14 +3981,35 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       <div class="err-actions"><button class="btn ghost" onclick="location.reload()">${t('إعادة المحاولة','Try again')}</button></div>
     </div></div>`;
   }
+  /* which sections (or the whole site) are currently under maintenance */
+  function maintActiveList(){
+    if(!maintCfg) return [];
+    if(maintCfg.site) return [t('الموقع كله','the whole site')];
+    const on=[];
+    if(maintCfg.explore)  on.push(t('الاستكشاف','Explore'));
+    if(maintCfg.profiles) on.push(t('البروفايلات','Profiles'));
+    if(maintCfg.blogs)    on.push(t('المدونات','Blogs'));
+    if(maintCfg.premium)  on.push(t('البريميوم','Premium'));
+    return on;
+  }
+  /* admin-only banner so the admin can SEE maintenance is active (they bypass the block) */
+  function showAdminMaintBanner(){
+    const ex=document.getElementById('maintBanner'); if(ex) ex.remove();
+    if(!isAdmin()) return;
+    const on=maintActiveList(); if(!on.length) return;
+    const b=document.createElement('div'); b.id='maintBanner';
+    b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:10000;background:#b91c1c;color:#fff;padding:7px 14px;text-align:center;font-size:12.5px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+    b.textContent='🛠️ '+t('وضع الصيانة مفعّل على: ','Maintenance active on: ')+on.join('، ')+' — '+t('الزوّار يرون صفحة الصيانة (أنت تتخطاها كأدمن)','visitors see the maintenance page (you bypass it as admin)');
+    document.body.appendChild(b);
+  }
   /* route() wrapped with the maintenance gate — used by init() on every page load */
   async function routeGuarded(){
     if(maintCfg===null) await loadMaintenance();
-    if(maintOn()){
-      if(adminEmail===undefined) await loadAdminEmail();   // load so the admin can bypass
-      if(!isAdmin()){ showMaintenancePage(); return; }
-    }
+    const anyMaint = maintActiveList().length>0;
+    if(anyMaint && adminEmail===undefined) await loadAdminEmail();   // load so the admin can bypass + see the banner
+    if(maintOn() && !isAdmin()){ showMaintenancePage(); return; }
     route();
+    showAdminMaintBanner();
   }
   /* site telemetry + growth — runs once currentUser is resolved (or anonymously):
      log the visit, mark live presence, record any pending referral, maybe pop the invite. */
