@@ -191,8 +191,18 @@ export async function update(r, values){
   return writeActive(i => fbUpdate(fbRef(dbs[i], path), values));
 }
 export async function remove(r){
-  if(dbs.length === 1) return fbRemove(r);
   const path = pathOf(r);
+  /* SAFETY GUARD — every legitimate delete targets a SPECIFIC record and has at
+     least 2 path segments (e.g. "profiles/<id>", "users/<uid>", "config/adminGate").
+     A shorter path — the root ("") or a whole top-level collection ("profiles",
+     "users", …) — can only come from a bug such as an empty/undefined id. Refuse it
+     so a single bad delete can NEVER wipe a collection or the entire database. */
+  const segs = String(path).split('/').filter(Boolean);
+  if(segs.length < 2){
+    const msg = 'remove blocked: refusing to delete top-level path "' + path + '"';
+    console.error(msg); throw new Error(msg);
+  }
+  if(dbs.length === 1) return fbRemove(fbRef(primaryDb, path));
   await Promise.all(dbs.map(d => withTimeout(fbRemove(fbRef(d, path)).catch(() => {}), 8000, null)));   // a record may be in any DB
 }
 /* config writes: the PRIMARY must succeed (rules everywhere read config/adminEmail),
