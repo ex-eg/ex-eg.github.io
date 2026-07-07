@@ -1,16 +1,31 @@
-/* elgoharyX — Firebase initialization.
-   Single source of truth for the database connection. Every module that needs
-   the DB imports `db` / `auth` and the helpers from here instead of re-initializing.
-   The Realtime-DB and Auth functions are re-exported so callers import everything
-   Firebase-related from this one module. */
+/* elgoharyX — Firebase initialization + multi-database federation.
+   Single source of truth for the DB connection. Every module imports `db` and the
+   data helpers (ref/get/set/update/remove/child …) from here, so this file is the
+   ONE place data access can be federated across several Realtime Databases.
+
+   FEDERATION (admin-configured backup DBs):
+     • reads  — merged across all DBs, so old data on the primary + new data on a
+                backup are both visible (by key AND in list/collection reads).
+     • writes — go to the "active" DB; on a non-permission failure they advance to
+                the next DB automatically; config/** is mirrored to ALL DBs so the
+                admin-auth rules (which read config/adminEmail) work on every DB.
+     • remove — applied to ALL DBs (a record may live in any of them).
+
+   SAFETY: when no backup is configured (the default), there is exactly ONE DB and
+   every helper takes a fast path that calls the raw Firebase SDK directly — i.e.
+   behaviour is byte-for-byte identical to a plain single-database setup. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import {
+  getDatabase,
+  ref as fbRef, child as fbChild, get as fbGet, set as fbSet,
+  update as fbUpdate, remove as fbRemove,
+  increment, onDisconnect, onValue, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
-/* Re-export the Realtime-DB and Auth helpers so other modules do:
-   import { db, ref, set, get, ... } from './firebase.js'; */
-export { ref, set, get, child, remove, update, increment } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+/* value-only helpers pass straight through (they are sentinels / listeners, not paths) */
+export { increment, onDisconnect, onValue, serverTimestamp };
 export { GoogleAuthProvider, GithubAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -26,20 +41,167 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-/* App Check — attests that requests come from the real elgoharyX site (registered
-   with this reCAPTCHA v3 key, restricted to ex-eg.github.io). Once App Check is set
-   to "Enforce" for Realtime Database, requests without a valid token are rejected.
-   For local testing (localhost), set a debug token — see note in the docs. */
+/* reCAPTCHA v3 site key(s) for App Check. The admin can change/replace the key
+   from the panel; it is mirrored to localStorage so it survives (App Check runs
+   before any DB read, and an enforced App Check would block reading the key from
+   the DB — so localStorage, not a live DB read, is the source here). The first
+   key is the active one; the rest are spares the admin can promote. */
+const DEFAULT_CAPTCHA_KEYS = ['6LdjuUUtAAAAAG9D85LTSaK0HM5UoIrzgHnHB5DG'];
+export function captchaKeys(){
+  try{ const s = localStorage.getItem('apb_captcha_keys'); if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.filter(Boolean).length) return a.filter(Boolean); } }catch(e){}
+  return DEFAULT_CAPTCHA_KEYS.slice();
+}
+
+/* App Check — attests that requests come from the real elgoharyX site. */
 try {
-  // Optional: enable an App Check debug token on localhost so local dev keeps working.
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6LdjuUUtAAAAAG9D85LTSaK0HM5UoIrzgHnHB5DG'),
+    provider: new ReCaptchaV3Provider(captchaKeys()[0]),
     isTokenAutoRefreshEnabled: true
   });
 } catch (e) { console.warn('App Check init skipped:', e); }
 
-export const db = getDatabase(app);
+/* ---------- database URL list (primary + admin-added backups) ----------
+   The primary URL is the hardcoded default and is always first. Backups come from
+   localStorage (mirrored from config/dbUrls, which is refreshed from the primary on
+   each load for the NEXT load) — they must be available before any DB read, so a
+   live DB read cannot be the source. */
+const DEFAULT_DB_URL = firebaseConfig.databaseURL;
+const dedupe = arr => { const seen = new Set(), out = []; for(const x of arr){ if(x && !seen.has(x)){ seen.add(x); out.push(x); } } return out; };
+function backupUrls(){
+  try{ const s = localStorage.getItem('apb_db_urls'); if(s){ const a = JSON.parse(s); if(Array.isArray(a)) return a.map(x=>String(x||'').trim()).filter(Boolean); } }catch(e){}
+  return [];
+}
+function allUrls(){ return dedupe([DEFAULT_DB_URL, ...backupUrls()]); }
+
+const URLS = allUrls();
+const dbs = URLS.map(u => getDatabase(app, u));   // one instance per URL
+const primaryDb = dbs[0];
+
+/* active write DB index (persisted so overflow writes keep going to the backup) */
+let _activeWrite = 0;
+try{ const s = localStorage.getItem('apb_db_active'); if(s!=null){ const i = parseInt(s,10); if(i>=0 && i<dbs.length) _activeWrite = i; } }catch(e){}
+const persistActive = i => { _activeWrite = i; try{ localStorage.setItem('apb_db_active', String(i)); }catch(e){} };
+
+/* the path a Reference points at (host-independent), e.g. "profiles/abc". */
+function pathOf(r){
+  try{
+    if(r == null) return '';
+    if(typeof r === 'string') return r.replace(/^\/+/, '');
+    const u = new URL(r.toString());
+    return decodeURIComponent(u.pathname).replace(/^\/+/, '');
+  }catch(e){ return ''; }
+}
+
+/* ---------- synthetic snapshot (wraps a merged plain value) ---------- */
+function makeSnap(value, key){
+  const exists = value !== null && value !== undefined;
+  const snap = {
+    key: key != null ? key : null,
+    exists: () => exists,
+    val: () => (exists ? value : null),
+    toJSON: () => (exists ? value : null),
+    child(p){
+      const parts = String(p).split('/').filter(s=>s!=='');
+      let v = value;
+      for(const part of parts){ v = (v && typeof v === 'object') ? v[part] : undefined; }
+      return makeSnap(v === undefined ? null : v, parts.length ? parts[parts.length-1] : key);
+    },
+    hasChild(p){ return this.child(p).exists(); },
+    hasChildren: () => exists && typeof value === 'object' && value !== null && Object.keys(value).length > 0,
+    numChildren: () => (exists && typeof value === 'object' && value !== null) ? Object.keys(value).length : 0,
+    forEach(cb){
+      if(exists && typeof value === 'object' && value !== null){
+        for(const k of Object.keys(value)){
+          const v = value[k]; if(v === undefined || v === null) continue;
+          if(cb(makeSnap(v, k)) === true) return true;
+        }
+      }
+      return false;
+    }
+  };
+  return snap;
+}
+/* merge the per-DB values: unite object collections (earlier DB wins on a key
+   clash), else take the first DB that has a value. */
+function mergeValues(vals){
+  const existing = vals.filter(v => v !== null && v !== undefined);
+  if(!existing.length) return null;
+  const allObj = existing.every(v => typeof v === 'object' && v !== null && !Array.isArray(v));
+  if(allObj && existing.length > 1){
+    const merged = {};
+    for(let i = existing.length - 1; i >= 0; i--) Object.assign(merged, existing[i]); // primary (i=0) applied last → wins
+    return merged;
+  }
+  return existing[0];
+}
+
+/* ---------- exported data helpers (federated, with single-DB fast path) ---------- */
+export function ref(_db, path){ return path === undefined ? fbRef(primaryDb) : fbRef(primaryDb, path); }
+export function child(r, path){ return fbChild(r, path); }
+
+export async function get(r){
+  if(dbs.length === 1) return fbGet(r);                        // fast path — untouched single-DB behaviour
+  const path = pathOf(r);
+  const snaps = await Promise.all(dbs.map(d => fbGet(fbRef(d, path)).catch(() => null)));
+  const vals = snaps.map(s => (s && s.exists()) ? s.val() : null);
+  const merged = mergeValues(vals);
+  const key = path ? path.split('/').filter(Boolean).pop() || null : null;
+  return makeSnap(merged, key);
+}
+
+/* config/** must exist identically on every DB (rules read config/adminEmail), so
+   those writes mirror to all DBs; everything else goes to the active DB. */
+const isConfigPath = p => p === 'config' || p.indexOf('config/') === 0;
+
+export async function set(r, value){
+  if(dbs.length === 1) return fbSet(r, value);
+  const path = pathOf(r);
+  if(isConfigPath(path)){ await Promise.all(dbs.map(d => fbSet(fbRef(d, path), value))); return; }
+  return writeActive(i => fbSet(fbRef(dbs[i], path), value));
+}
+export async function update(r, values){
+  if(dbs.length === 1) return fbUpdate(r, values);
+  const path = pathOf(r);
+  if(isConfigPath(path)){ await Promise.all(dbs.map(d => fbUpdate(fbRef(d, path), values))); return; }
+  return writeActive(i => fbUpdate(fbRef(dbs[i], path), values));
+}
+export async function remove(r){
+  if(dbs.length === 1) return fbRemove(r);
+  const path = pathOf(r);
+  await Promise.all(dbs.map(d => fbRemove(fbRef(d, path)).catch(() => {})));   // a record may be in any DB
+}
+/* try the active DB, advancing to the next on a non-permission failure (over quota
+   / unavailable → the DB is full or down, so overflow to the next). */
+async function writeActive(op){
+  for(let n = 0; n < dbs.length; n++){
+    const i = (_activeWrite + n) % dbs.length;
+    try{ await op(i); if(i !== _activeWrite) persistActive(i); return; }
+    catch(e){
+      const msg = String((e && (e.code || e.message)) || '');
+      if(/permission|denied/i.test(msg) || n === dbs.length - 1) throw e;   // rule error → don't shop around
+    }
+  }
+}
+
+export const db = primaryDb;
 export const auth = getAuth(app);
+
+/* refresh the backup-URL list from the primary DB for the NEXT load (so a backup
+   the admin adds on one device propagates to others). */
+try{ fbGet(fbRef(primaryDb, 'config/dbUrls')).then(s => {
+  if(s.exists()){ const a = (Array.isArray(s.val()) ? s.val() : Object.values(s.val() || {})).map(x=>String(x||'').trim()).filter(Boolean);
+    try{ localStorage.setItem('apb_db_urls', JSON.stringify(a)); }catch(e){} }
+}).catch(() => {}); }catch(e){}
+
+/* ---------- admin: manage backup DBs ---------- */
+export function dbState(){ return { urls: allUrls(), backups: backupUrls(), active: _activeWrite }; }
+export async function saveDbBackups(list){
+  const clean = dedupe((list || []).map(x => String(x || '').trim()).filter(Boolean));
+  try{ localStorage.setItem('apb_db_urls', JSON.stringify(clean)); }catch(e){}
+  await fbSet(fbRef(primaryDb, 'config/dbUrls'), clean);   // mirrored to primary; propagates on next load
+  return clean;
+}
+export function setActiveDb(i){ const n = Math.max(0, Math.min(allUrls().length - 1, i | 0)); persistActive(n); return n; }

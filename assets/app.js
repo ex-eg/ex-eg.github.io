@@ -7,7 +7,8 @@
    screens, router and logic. */
 import {
   db, auth, ref, set, get, child, remove, update, increment,
-  GoogleAuthProvider, GithubAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut
+  GoogleAuthProvider, GithubAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut,
+  captchaKeys, dbState, saveDbBackups, setActiveDb
 } from './firebase.js';
 import {
   ROOT, PAGE, curLang, t, pageUrl,
@@ -18,6 +19,7 @@ import {
   shortId, uniqueShortId, uniqueUserId, shorten
 } from './core.js';
 import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, currentImageKeys } from './imagehost.js';
+import { logVisit, startPresence, captureReferral, recordReferralIfPending, referralCount } from './site.js';
 
   const TEMPLATES = [
     {id:'royal',    name:t('الكلاسيكي','Classic')},
@@ -638,6 +640,7 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
         <nav class="drawer-nav">
           <a class="dr-item ${active==='account'?'on':''}" href="${pageUrl('account.html')}">${UICON.person}<span>${t('الملف الشخصي','Profile')}</span></a>
           <a class="dr-item dr-vip ${active==='premium'?'on':''}" href="${pageUrl('premium.html')}">${CROWN}<span>${t('الاشتراك المميز','Premium')}</span></a>
+          <button class="dr-item" data-act="invite"><span style="font-size:18px">🎁</span><span>${t('ادعُ أصدقاءك — بريميوم مجاني','Invite friends — free Premium')}</span></button>
           ${isAdmin()?`<a class="dr-item ${active==='admin'?'on':''}" href="${pageUrl('admin.html')}">${TAB.privacy}<span>${t('لوحة الأدمن','Admin')}</span></a>`:''}
           <a class="dr-item ${active==='explore'?'on':''}" href="${urlExplore()}">${TAB.cards}<span>${t('استكشف المدونات','Explore Blogs')}</span></a>
           <a class="dr-item ${active==='mine'?'on':''}" href="${urlMyProfiles()}">${TAB.cards}<span>${t('بروفايلاتي','My Profiles')}</span></a>
@@ -743,6 +746,8 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
     document.querySelectorAll('[data-act="menu-close"]').forEach(b=>b.onclick=()=>{ if(dw) dw.classList.remove('open'); });
     // notifications bell (announcements + subscribe)
     document.querySelectorAll('[data-act="bell"]').forEach(b=>b.onclick=openNotifications);
+    // referral invite popup (share link → 1-day premium)
+    document.querySelectorAll('[data-act="invite"]').forEach(b=>b.onclick=()=>{ const dw=$('#drawerWrap'); if(dw) dw.classList.remove('open'); openReferral(false); });
     // language toggle (Arabic / English) — flips language then re-renders the page
     document.querySelectorAll('[data-act="lang"]').forEach(b=>{
       const lbl=b.querySelector('.lt-label'); if(lbl) lbl.textContent = curLang()==='en'?'ع':'EN';
@@ -2878,14 +2883,69 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
   };
   /* ▲▲▲ */
   const emailjsReady = () => EMAILJS.publicKey && !EMAILJS.publicKey.startsWith('YOUR_');
+  /* ---- backup email (EmailJS) keys ----
+     The hardcoded EMAILJS above is the primary; the admin can add backup credential
+     sets in config/emailKeys. Sending tries each set in order, so when one account
+     hits its monthly send limit the next one is used automatically. */
+  let _emailKeys=null;
+  const cleanEmailSet = x => ({
+    publicKey:String((x&&x.publicKey)||'').trim(), serviceId:String((x&&x.serviceId)||'').trim(),
+    templateId:String((x&&x.templateId)||'').trim(), notifyTemplateId:String((x&&x.notifyTemplateId)||'').trim(),
+    toEmail:String((x&&x.toEmail)||'').trim()
+  });
+  const validEmailSet = x => x.publicKey && !x.publicKey.startsWith('YOUR_') && x.serviceId && x.templateId;
+  async function loadEmailBackups(){
+    let arr=[];
+    try{ const s=await get(child(ref(db),'config/emailKeys')); if(s.exists()){ const v=s.val(); arr=Array.isArray(v)?v:Object.values(v||{}); } }catch(e){}
+    return arr.map(cleanEmailSet).filter(validEmailSet);
+  }
+  async function emailKeyList(){
+    if(_emailKeys) return _emailKeys;
+    _emailKeys=[EMAILJS, ...(await loadEmailBackups())];   // primary first, then backups
+    return _emailKeys;
+  }
+  const clearEmailKeysCache=()=>{ _emailKeys=null; };
+  async function saveEmailBackups(list){
+    const clean=(list||[]).map(cleanEmailSet).filter(validEmailSet);
+    await set(ref(db,'config/emailKeys'), clean);
+    _emailKeys=null;
+    return clean;
+  }
+  /* send one EmailJS message, rotating through primary + backups until one succeeds */
+  async function emailjsSend(kind, params){
+    const keys=await emailKeyList();
+    for(const k of keys){
+      if(!k || !k.publicKey || k.publicKey.startsWith('YOUR_')) continue;
+      const tpl = (kind==='notify' && k.notifyTemplateId && !k.notifyTemplateId.startsWith('YOUR_')) ? k.notifyTemplateId : k.templateId;
+      const p = (kind==='admin' && k.toEmail) ? { ...params, to_email:k.toEmail } : params;
+      try{
+        const r=await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ service_id:k.serviceId, template_id:tpl, user_id:k.publicKey, template_params:p })
+        });
+        if(r.ok) return true;   // else quota/limit → try the next key
+      }catch(e){ /* network error → try the next key */ }
+    }
+    return false;
+  }
   async function notifyAdminEmail(fields){
     if(!emailjsReady()) return; // لم تُضبط بعد — نتجاهل بهدوء
-    try{
-      await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ service_id:EMAILJS.serviceId, template_id:EMAILJS.templateId, user_id:EMAILJS.publicKey, template_params:fields })
-      });
-    }catch(e){ console.warn('email notify failed', e); }
+    await emailjsSend('admin', fields);
+  }
+  /* ---- captcha (reCAPTCHA / App Check) keys — admin-editable ----
+     App Check runs in firebase.js from localStorage (before any DB read), so saving
+     mirrors to BOTH localStorage (what actually applies) and config/captchaKeys. */
+  async function loadCaptchaKeys(){
+    try{ const s=localStorage.getItem('apb_captcha_keys'); if(s){ const a=JSON.parse(s); if(Array.isArray(a)&&a.filter(Boolean).length) return a.filter(Boolean).map(x=>String(x).trim()); } }catch(e){}
+    try{ const s=await get(child(ref(db),'config/captchaKeys')); if(s.exists()){ const v=s.val(); const clean=(Array.isArray(v)?v:Object.values(v||{})).map(x=>String(x||'').trim()).filter(Boolean);
+      if(clean.length){ try{ localStorage.setItem('apb_captcha_keys', JSON.stringify(clean)); }catch(e){} return clean; } } }catch(e){}
+    return captchaKeys();
+  }
+  async function saveCaptchaKeys(keys){
+    const clean=(keys||[]).map(k=>String(k||'').trim()).filter(Boolean);
+    try{ localStorage.setItem('apb_captcha_keys', JSON.stringify(clean)); }catch(e){}
+    await set(ref(db,'config/captchaKeys'), clean);
+    return clean;
   }
   const CROWN='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 8.5 6.5 12l3.7-6 1.8 0L15.5 12l4-3.5-1.7 10.5H4.2L2.5 8.5Zm3.2 10.5h12.6"/></svg>';
   const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="26" height="26"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -2998,8 +3058,6 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
      variable the EmailJS template happens to reference. */
   async function sendUserEmail(toEmail, title, body, toName){
     if(!emailjsReady() || !toEmail) return false;
-    const tpl = (EMAILJS.notifyTemplateId && !EMAILJS.notifyTemplateId.startsWith('YOUR_'))
-      ? EMAILJS.notifyTemplateId : EMAILJS.templateId;
     const bodyText = (body && body.trim()) ? body : title;   // never empty
     const full = (body && body.trim()) ? (title + '\n\n' + body) : title;
     const params = {
@@ -3014,13 +3072,7 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
       // harmless extras kept so the fallback payment template renders cleanly
       method: t('📢 إشعار','📢 Notification'), amount: '', screenshot: '', link: urlHome()
     };
-    try{
-      const r=await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ service_id:EMAILJS.serviceId, template_id:tpl, user_id:EMAILJS.publicKey, template_params:params })
-      });
-      return r.ok;
-    }catch(e){ console.warn('user email failed', e); return false; }
+    return emailjsSend('notify', params);   // rotates through primary + backup keys
   }
 
   let adminEmail = undefined; // undefined = not loaded yet, null = none
@@ -3178,6 +3230,9 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
     const adminGateObj = await loadAdminGate();   // panel password (hides the admin email)
     const adminGateSet = !!adminGateObj;
     const imgKeys = await loadImageKeys();         // configured imgbb upload keys (for the Settings tab)
+    const captchaList = await loadCaptchaKeys();   // reCAPTCHA (App Check) site keys
+    const emailBackups = await loadEmailBackups(); // backup EmailJS credential sets
+    const dbInfo = dbState();                      // primary + backup DB URLs and active write index
     // "set admin email" + "panel password" cards
     const setupCard = () => `<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">${t('إعداد بريد الأدمن','Admin email setup')}</h3>
@@ -3204,11 +3259,61 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
       </div>`:''}
       ${isAdmin()?`<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">🖼️ ${t('مفاتيح رفع الصور (imgbb)','Image upload keys (imgbb)')}</h3>
-        <div class="sub" style="margin-bottom:14px">${t('مفتاح واحد في كل سطر. يمكنك إضافة أكثر من مفتاح — تُجرَّب بالترتيب، فإذا نفد أحدها يُستخدم التالي تلقائياً.','One key per line. You can add more than one — they are tried in order, so when one runs out the next is used automatically.')} <a href="https://api.imgbb.com/" target="_blank" rel="noopener" style="color:var(--gold)">imgbb</a></div>
-        <div class="field"><label>${t('مفاتيح API','API keys')}</label><textarea id="imgKeysInp" dir="ltr" rows="4" placeholder="8f3c…&#10;a91b…" style="width:100%;min-height:96px;resize:vertical;font-family:monospace">${esc(imgKeys.join('\n'))}</textarea></div>
-        <button class="btn primary" id="imgKeysSave" style="width:100%">${t('حفظ المفاتيح','Save keys')}</button>
+        <div class="sub" style="margin-bottom:14px">${t('كل مفتاح في خانة مستقلة. تُجرَّب بالترتيب، فإذا فشل رفع صورة بأحدها ينتقل تلقائياً للتالي في الخلفية حتى تُرفع الصورة.','Each key in its own box. They are tried in order — if an upload fails on one, it automatically switches to the next in the background until the image uploads.')} <a href="https://api.imgbb.com/" target="_blank" rel="noopener" style="color:var(--gold)">imgbb</a></div>
+        <div id="imgKeysList">${(imgKeys.length?imgKeys:['']).map(imgKeyRow).join('')}</div>
+        <button class="btn ghost" id="imgKeysAdd" style="width:100%;margin-top:2px">＋ ${t('إضافة مفتاح آخر','Add another key')}</button>
+        <button class="btn primary" id="imgKeysSave" style="width:100%;margin-top:10px">${t('حفظ المفاتيح','Save keys')}</button>
         <div class="pm-note" id="imgKeysMsg"></div>
+      </div>`:''}
+      ${isAdmin()?`<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">🛡️ ${t('مفاتيح كاباتشا (reCAPTCHA / App Check)','Captcha keys (reCAPTCHA / App Check)')}</h3>
+        <div class="sub" style="margin-bottom:14px">${t('المفتاح الأول هو المُفعَّل، والباقي احتياطي يمكنك ترقيته. يُطبَّق عند إعادة تحميل الصفحة، ويُحفظ في هذا المتصفح.','The first key is the active one; the rest are spares you can promote. Applied on page reload and saved in this browser.')} <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener" style="color:var(--gold)">reCAPTCHA</a></div>
+        <div id="capKeysList">${(captchaList.length?captchaList:['']).map(capKeyRow).join('')}</div>
+        <button class="btn ghost" id="capKeysAdd" style="width:100%;margin-top:2px">＋ ${t('إضافة مفتاح احتياطي','Add a spare key')}</button>
+        <button class="btn primary" id="capKeysSave" style="width:100%;margin-top:10px">${t('حفظ مفاتيح الكاباتشا','Save captcha keys')}</button>
+        <div class="pm-note" id="capKeysMsg"></div>
+      </div>`:''}
+      ${isAdmin()?`<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">✉️ ${t('مفاتيح الإيميل الاحتياطية (EmailJS)','Backup email keys (EmailJS)')}</h3>
+        <div class="sub" style="margin-bottom:14px">${t('المفتاح الأساسي مضبوط في الكود. أضف حسابات EmailJS احتياطية — تُجرَّب بالترتيب، فإذا نفد حد الإرسال الشهري لأحدها يُستخدم التالي تلقائياً.','The primary key is set in the code. Add backup EmailJS accounts — they are tried in order, so when one hits its monthly send limit the next is used automatically.')} <a href="https://dashboard.emailjs.com/admin" target="_blank" rel="noopener" style="color:var(--gold)">EmailJS</a></div>
+        <div id="emlList">${(emailBackups.length?emailBackups:[{}]).map(emailSetRow).join('')}</div>
+        <button class="btn ghost" id="emlAdd" style="width:100%;margin-top:2px">＋ ${t('إضافة حساب احتياطي','Add a backup account')}</button>
+        <button class="btn primary" id="emlSave" style="width:100%;margin-top:10px">${t('حفظ مفاتيح الإيميل','Save email keys')}</button>
+        <div class="pm-note" id="emlMsg"></div>
+      </div>`:''}
+      ${isAdmin()?`<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">🗄️ ${t('قواعد البيانات الاحتياطية (تكامل)','Backup databases (federation)')}</h3>
+        <div class="sub" style="margin-bottom:14px">${t('القراءة تُدمج من كل القواعد، والكتابة الجديدة تروح للقاعدة النشطة (وتنتقل تلقائياً للتالية عند الامتلاء). لازم تنشر نفس القواعد على كل قاعدة احتياطية. يُطبَّق بعد إعادة التحميل.','Reads merge across all databases; new writes go to the active one (and advance automatically when it fills). Publish the same security rules on every backup. Applied after a reload.')}</div>
+        <div class="field"><label>${t('القاعدة الأساسية (ثابتة)','Primary database (fixed)')}</label><input value="${esc(dbInfo.urls[0]||'')}" dir="ltr" readonly style="opacity:.7;font-family:monospace;font-size:12px"/></div>
+        <label style="font-size:13px;font-weight:600;display:block;margin:4px 0 6px">${t('قواعد احتياطية','Backup databases')}</label>
+        <div id="dbList">${(dbInfo.backups.length?dbInfo.backups:['']).map(dbUrlRow).join('')}</div>
+        <button class="btn ghost" id="dbAdd" style="width:100%;margin-top:2px">＋ ${t('إضافة قاعدة احتياطية','Add a backup database')}</button>
+        <div class="field" style="margin-top:12px"><label>${t('قاعدة الكتابة النشطة','Active write database')}</label>
+          <select id="dbActive" dir="ltr" style="width:100%">${dbInfo.urls.map((u,i)=>`<option value="${i}" ${i===dbInfo.active?'selected':''}>${i===0?t('الأساسية','Primary')+' — ':''}${esc(u)}</option>`).join('')}</select></div>
+        <button class="btn primary" id="dbSave" style="width:100%;margin-top:6px">${t('حفظ إعدادات القواعد','Save database settings')}</button>
+        <div class="pm-note" id="dbMsg"></div>
       </div>`:''}`;
+    // one row = one API key box + a remove button (used on first render and by "add another")
+    const imgKeyRow = (k='')=>`<div class="imgkey-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input class="imgkey-inp" dir="ltr" value="${esc(k)}" placeholder="${t('مفتاح imgbb API','imgbb API key')}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:monospace"/>
+        <button type="button" class="btn del imgkey-del" title="${t('حذف','Remove')}" style="padding:8px 12px;flex:0 0 auto">✕</button>
+      </div>`;
+    const capKeyRow = (k='')=>`<div class="cap-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input class="cap-inp" dir="ltr" value="${esc(k)}" placeholder="${t('مفتاح موقع reCAPTCHA v3','reCAPTCHA v3 site key')}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:monospace"/>
+        <button type="button" class="btn del cap-del" title="${t('حذف','Remove')}" style="padding:8px 12px;flex:0 0 auto">✕</button>
+      </div>`;
+    const dbUrlRow = (u='')=>`<div class="db-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input class="db-inp" dir="ltr" value="${esc(u)}" placeholder="https://your-backup-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-family:monospace;font-size:12px"/>
+        <button type="button" class="btn del db-del" title="${t('حذف','Remove')}" style="padding:8px 12px;flex:0 0 auto">✕</button>
+      </div>`;
+    const emailSetRow = (s={})=>`<div class="eml-row" style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative">
+        <button type="button" class="btn del eml-del" title="${t('حذف','Remove')}" style="position:absolute;top:8px;inset-inline-end:8px;padding:4px 10px">✕</button>
+        <div class="field"><label>Public Key</label><input class="eml-pk" dir="ltr" value="${esc(s.publicKey||'')}" autocomplete="off"/></div>
+        <div class="field"><label>Service ID</label><input class="eml-sv" dir="ltr" value="${esc(s.serviceId||'')}" autocomplete="off"/></div>
+        <div class="field"><label>Template ID</label><input class="eml-tp" dir="ltr" value="${esc(s.templateId||'')}" autocomplete="off"/></div>
+        <div class="field"><label>Notify Template ID (${t('اختياري','optional')})</label><input class="eml-nt" dir="ltr" value="${esc(s.notifyTemplateId||'')}" autocomplete="off"/></div>
+        <div class="field"><label>To Email</label><input class="eml-to" dir="ltr" value="${esc(s.toEmail||'')}" autocomplete="off"/></div>
+      </div>`;
     const wireSetup = () => {
       // save the admin email
       const b=$('#admSave');
@@ -3236,17 +3341,81 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
       if(pr) pr.onclick=async()=>{ if(!confirm(t('إزالة كلمة مرور اللوحة؟ سيصبح بريد الأدمن ظاهراً لمن يفتح القسم.','Remove the panel password? The admin email will become visible to anyone who opens the section.')))return;
         try{ await remove(ref(db,'config/adminGate')); clearAdminUnlock(); toast(t('تمت إزالة كلمة المرور','Password removed')); showAdmin(); }
         catch(e){ console.error(e); toast(t('تعذّر — تأكد أنك أدمن','Failed — make sure you are the admin')); } };
-      // save the image-upload keys (one imgbb key per line; more than one allowed)
+      // image-upload keys: each key in its own box, with add / remove
+      const list=$('#imgKeysList');
+      const add=$('#imgKeysAdd');
+      if(add && list) add.onclick=()=>{ list.insertAdjacentHTML('beforeend', imgKeyRow('')); const inps=list.querySelectorAll('.imgkey-inp'); const last=inps[inps.length-1]; if(last) last.focus(); };
+      // remove a row (delegated) — always keep at least one empty box on screen
+      if(list) list.onclick=(e)=>{ const del=e.target.closest('.imgkey-del'); if(!del) return;
+        const rows=list.querySelectorAll('.imgkey-row');
+        if(rows.length<=1){ const inp=list.querySelector('.imgkey-inp'); if(inp) inp.value=''; }
+        else del.closest('.imgkey-row').remove();
+      };
       const ik=$('#imgKeysSave');
       if(ik) ik.onclick=async()=>{
-        const raw=($('#imgKeysInp').value||''), msg=$('#imgKeysMsg');
-        const keys=raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+        const msg=$('#imgKeysMsg');
+        const keys=[...(list?list.querySelectorAll('.imgkey-inp'):[])].map(i=>i.value.trim()).filter(Boolean);
         if(!keys.length){ msg.className='pm-note'; msg.textContent=t('أضف مفتاحاً واحداً على الأقل','Add at least one key'); return; }
         ik.disabled=true; const old=ik.textContent; ik.textContent=t('جارٍ الحفظ…','Saving…');
         try{ const saved=await saveImageKeys(keys);
           msg.className='pm-note ok'; msg.textContent=t('تم حفظ المفاتيح ✓','Keys saved ✓')+' ('+saved.length+')';
         }catch(e){ console.error(e); msg.className='pm-note'; msg.textContent=t('تعذّر الحفظ — تأكد أنك أدمن (Google) وأن القواعد المحدّثة منشورة','Failed to save — make sure you are the admin (Google) and the updated rules are published'); }
         ik.disabled=false; ik.textContent=old;
+      };
+      // captcha (reCAPTCHA) keys: box per key, add / remove, save to localStorage + config
+      const capList=$('#capKeysList'), capAdd=$('#capKeysAdd'), capSave=$('#capKeysSave');
+      if(capAdd && capList) capAdd.onclick=()=>{ capList.insertAdjacentHTML('beforeend', capKeyRow('')); const ii=capList.querySelectorAll('.cap-inp'); const l=ii[ii.length-1]; if(l) l.focus(); };
+      if(capList) capList.onclick=(e)=>{ const del=e.target.closest('.cap-del'); if(!del) return;
+        const rows=capList.querySelectorAll('.cap-row');
+        if(rows.length<=1){ const inp=capList.querySelector('.cap-inp'); if(inp) inp.value=''; } else del.closest('.cap-row').remove(); };
+      if(capSave) capSave.onclick=async()=>{
+        const msg=$('#capKeysMsg');
+        const keys=[...(capList?capList.querySelectorAll('.cap-inp'):[])].map(i=>i.value.trim()).filter(Boolean);
+        if(!keys.length){ msg.className='pm-note'; msg.textContent=t('أضف مفتاحاً واحداً على الأقل','Add at least one key'); return; }
+        capSave.disabled=true; const old=capSave.textContent; capSave.textContent=t('جارٍ الحفظ…','Saving…');
+        try{ const saved=await saveCaptchaKeys(keys);
+          msg.className='pm-note ok'; msg.textContent=t('تم الحفظ ✓ — أعد تحميل الصفحة للتفعيل','Saved ✓ — reload the page to apply')+' ('+saved.length+')';
+        }catch(e){ console.error(e); msg.className='pm-note'; msg.textContent=t('حُفظ محلياً، لكن تعذّر الحفظ في القاعدة — تأكد أنك أدمن والقواعد منشورة','Saved locally, but saving to the database failed — make sure you are the admin and the rules are published'); }
+        capSave.disabled=false; capSave.textContent=old;
+      };
+      // backup email (EmailJS) accounts: repeatable 5-field sets, add / remove, save to config
+      const emlList=$('#emlList'), emlAdd=$('#emlAdd'), emlSave=$('#emlSave');
+      if(emlAdd && emlList) emlAdd.onclick=()=>{ emlList.insertAdjacentHTML('beforeend', emailSetRow({})); const r=emlList.querySelector('.eml-row:last-child .eml-pk'); if(r) r.focus(); };
+      if(emlList) emlList.onclick=(e)=>{ const del=e.target.closest('.eml-del'); if(!del) return;
+        const rows=emlList.querySelectorAll('.eml-row');
+        if(rows.length<=1){ del.closest('.eml-row').querySelectorAll('input').forEach(i=>i.value=''); } else del.closest('.eml-row').remove(); };
+      if(emlSave) emlSave.onclick=async()=>{
+        const msg=$('#emlMsg');
+        const sets=[...(emlList?emlList.querySelectorAll('.eml-row'):[])].map(r=>({
+          publicKey:(r.querySelector('.eml-pk').value||'').trim(), serviceId:(r.querySelector('.eml-sv').value||'').trim(),
+          templateId:(r.querySelector('.eml-tp').value||'').trim(), notifyTemplateId:(r.querySelector('.eml-nt').value||'').trim(),
+          toEmail:(r.querySelector('.eml-to').value||'').trim()
+        })).filter(s=>s.publicKey||s.serviceId||s.templateId);
+        emlSave.disabled=true; const old=emlSave.textContent; emlSave.textContent=t('جارٍ الحفظ…','Saving…');
+        try{ const saved=await saveEmailBackups(sets);
+          msg.className='pm-note ok'; msg.textContent=t('تم حفظ الحسابات الاحتياطية ✓','Backup accounts saved ✓')+' ('+saved.length+')';
+        }catch(e){ console.error(e); msg.className='pm-note'; msg.textContent=t('تعذّر الحفظ — تأكد أنك أدمن (Google) وأن القواعد المحدّثة منشورة','Failed to save — make sure you are the admin (Google) and the updated rules are published'); }
+        emlSave.disabled=false; emlSave.textContent=old;
+      };
+      // backup databases: box per backup URL + active-write selector
+      const dbL=$('#dbList'), dbAdd=$('#dbAdd'), dbSave=$('#dbSave');
+      const syncDbActive=()=>{ const sel=$('#dbActive'); if(!sel) return; const urls=[dbInfo.urls[0], ...[...(dbL?dbL.querySelectorAll('.db-inp'):[])].map(i=>i.value.trim()).filter(Boolean)];
+        const cur=sel.value; sel.innerHTML=urls.map((u,i)=>`<option value="${i}">${i===0?t('الأساسية','Primary')+' — ':''}${esc(u)}</option>`).join(''); if(cur<urls.length) sel.value=cur; };
+      if(dbAdd && dbL) dbAdd.onclick=()=>{ dbL.insertAdjacentHTML('beforeend', dbUrlRow('')); const ii=dbL.querySelectorAll('.db-inp'); const l=ii[ii.length-1]; if(l) l.focus(); syncDbActive(); };
+      if(dbL){ dbL.onclick=(e)=>{ const del=e.target.closest('.db-del'); if(!del) return;
+          const rows=dbL.querySelectorAll('.db-row');
+          if(rows.length<=1){ const inp=dbL.querySelector('.db-inp'); if(inp) inp.value=''; } else del.closest('.db-row').remove(); syncDbActive(); };
+        dbL.addEventListener('input', syncDbActive); }
+      if(dbSave) dbSave.onclick=async()=>{
+        const msg=$('#dbMsg');
+        const backups=[...(dbL?dbL.querySelectorAll('.db-inp'):[])].map(i=>i.value.trim()).filter(Boolean);
+        const bad=backups.find(u=>!/^https:\/\/.+/i.test(u));
+        if(bad){ msg.className='pm-note'; msg.textContent=t('رابط قاعدة غير صالح — لازم يبدأ بـ https://','Invalid database URL — it must start with https://'); return; }
+        dbSave.disabled=true; const old=dbSave.textContent; dbSave.textContent=t('جارٍ الحفظ…','Saving…');
+        try{ await saveDbBackups(backups); const sel=$('#dbActive'); if(sel) setActiveDb(parseInt(sel.value,10)||0);
+          msg.className='pm-note ok'; msg.textContent=t('تم الحفظ ✓ — أعد تحميل الصفحة للتفعيل','Saved ✓ — reload the page to apply');
+        }catch(e){ console.error(e); msg.className='pm-note'; msg.textContent=t('حُفظ محلياً، لكن تعذّر الحفظ في القاعدة — تأكد أنك أدمن والقواعد منشورة','Saved locally, but saving to the database failed — make sure you are the admin and the rules are published'); }
+        dbSave.disabled=false; dbSave.textContent=old;
       };
     };
 
@@ -3281,8 +3450,9 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
 
     /* ---------- tabbed control center ---------- */
     let TAB_ID='overview';
-    const TABS=[['overview',t('نظرة عامة','Overview')],['users',t('المستخدمون','Users')],['profiles',t('البروفايلات','Profiles')],
-      ['blogs',t('المدونات','Blogs')],['payments',t('المدفوعات','Payments')],['notify',t('الإشعارات','Notifications')],['config',t('الإعدادات','Settings')]];
+    let admTimer=null;   // auto-refresh interval for the active-now list (analytics tab)
+    const TABS=[['overview',t('نظرة عامة','Overview')],['analytics',t('التحليلات','Analytics')],['users',t('المستخدمون','Users')],['profiles',t('البروفايلات','Profiles')],
+      ['blogs',t('المدونات','Blogs')],['payments',t('المدفوعات','Payments')],['referrals',t('الدعوات','Referrals')],['notify',t('الإشعارات','Notifications')],['maintenance',t('الصيانة','Maintenance')],['config',t('الإعدادات','Settings')]];
     const shell=(inner)=> appbar('admin') + `<div class="wrap adm-wrap">
       <div class="mp-head"><div><h2>${t('لوحة تحكّم الأدمن','Admin Dashboard')}</h2>
         <div class="sub">${t('راقب وتحكّم في الموقع بالكامل — المستخدمون، المحتوى، الاشتراكات، والإشعارات.','Monitor and control the whole site — users, content, subscriptions, and notifications.')}</div></div></div>
@@ -3298,19 +3468,153 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
       renderTab();
     }
     async function renderTab(){
+      if(admTimer){ clearInterval(admTimer); admTimer=null; }   // stop any tab's auto-refresh
       const el=bodyEl(); if(!el) return; el.innerHTML=busy();
       try{
         if(TAB_ID==='overview')      await renderOverview(el);
+        else if(TAB_ID==='analytics') await renderAnalytics(el);
         else if(TAB_ID==='users')    await renderUsers(el);
         else if(TAB_ID==='profiles') await renderProfiles(el);
         else if(TAB_ID==='blogs')    await renderBlogs(el);
         else if(TAB_ID==='payments') await renderPayments(el);
+        else if(TAB_ID==='referrals') await renderReferrals(el);
         else if(TAB_ID==='notify')   await renderNotify(el);
+        else if(TAB_ID==='maintenance') await renderMaintTab(el);
         else if(TAB_ID==='config'){  el.innerHTML=setupCard(); wireSetup(); }
         wireTabLinks(el);
       }catch(e){ console.error(e); el.innerHTML=`<div class="mp-empty">${t('تعذّر التحميل — تأكد أنك داخل بحساب الأدمن (Google) وأن قواعد قاعدة البيانات المحدّثة منشورة.','Failed to load — make sure you are signed in with the admin account (Google) and the updated database rules are published.')}</div>`; }
     }
     const wireTabLinks = el=>el.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>setTab(b.dataset.goto));
+
+    /* ----- Maintenance ----- */
+    async function renderMaintTab(el){
+      const cfg = await loadMaintenance() || {};
+      const row=(key,label,danger)=>`<label class="mnt-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)">
+          <span style="${danger?'font-weight:700':''}">${label}</span>
+          <input type="checkbox" data-mnt="${key}" ${cfg[key]?'checked':''} style="width:20px;height:20px;flex:0 0 auto;accent-color:var(--gold);cursor:pointer"/>
+        </label>`;
+      el.innerHTML = `<div class="panel" style="max-width:600px;margin:0 auto;padding:20px">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:6px">🛠️ ${t('وضع الصيانة','Maintenance mode')}</h3>
+        <div class="sub" style="margin-bottom:14px">${t('فعّل الصيانة على الموقع كله أو على قسم بعينه. الزوّار يرون صفحة صيانة، وأنت (الأدمن) تدخل عادي.','Enable maintenance for the whole site or a specific section. Visitors see a maintenance page; you (the admin) still get in normally.')}</div>
+        ${row('site','🔴 '+t('إغلاق الموقع بالكامل','Close the whole site'),true)}
+        ${row('explore',t('قسم الاستكشاف','Explore section'))}
+        ${row('profiles',t('قسم البروفايلات (العرض والإنشاء)','Profiles section (view & create)'))}
+        ${row('blogs',t('قسم المدونات (العرض والإنشاء)','Blogs section (view & create)'))}
+        ${row('premium',t('قسم البريميوم','Premium section'))}
+        <div class="field" style="margin-top:14px"><label>${t('رسالة الصيانة (اختياري)','Maintenance message (optional)')}</label><input id="mntMsg" value="${esc(cfg.msg||'')}" placeholder="${t('نعتذر، الموقع تحت الصيانة…','Sorry, the site is under maintenance…')}"/></div>
+        <button class="btn primary" id="mntSave" style="width:100%;margin-top:6px">${t('حفظ إعدادات الصيانة','Save maintenance settings')}</button>
+        <div class="pm-note" id="mntNote"></div>
+      </div>`;
+      const sv=$('#mntSave');
+      if(sv) sv.onclick=async()=>{
+        const out={};
+        el.querySelectorAll('[data-mnt]').forEach(c=>{ if(c.checked) out[c.dataset.mnt]=true; });
+        const m=($('#mntMsg').value||'').trim(); if(m) out.msg=m.slice(0,400);
+        const note=$('#mntNote'); sv.disabled=true; const old=sv.textContent; sv.textContent=t('جارٍ الحفظ…','Saving…');
+        try{ await set(ref(db,'config/maintenance'), out); maintCfg=out;
+          note.className='pm-note ok'; note.textContent=t('تم حفظ إعدادات الصيانة ✓','Maintenance settings saved ✓');
+        }catch(e){ console.error(e); note.className='pm-note'; note.textContent=t('تعذّر الحفظ — تأكد أنك أدمن (Google) وأن القواعد المحدّثة منشورة','Failed to save — make sure you are the admin (Google) and the updated rules are published'); }
+        sv.disabled=false; sv.textContent=old;
+      };
+    }
+
+    /* ----- Analytics ----- */
+    async function renderAnalytics(el){
+      let a={};
+      try{ const s=await get(child(ref(db),'analytics')); if(s.exists()) a=s.val()||{}; }catch(e){}
+      const total=a.total||0, daily=a.daily||{}, countries=a.countries||{};
+      const p2=n=>(n<10?'0':'')+n, keyOf=dt=>dt.getFullYear()+'-'+p2(dt.getMonth()+1)+'-'+p2(dt.getDate());
+      const today=daily[keyOf(new Date())]||0;
+      const days=[]; { const base=Date.now(); for(let i=13;i>=0;i--){ const dd=new Date(base-i*86400000); const k=keyOf(dd); days.push([k, daily[k]||0]); } }
+      const maxD=Math.max(1,...days.map(x=>x[1]));
+      const bars=days.map(x=>`<div title="${x[0]}: ${x[1]}" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px">
+          <div style="width:100%;background:var(--gold);border-radius:3px 3px 0 0;height:${Math.round(x[1]/maxD*90)+2}px"></div>
+          <span style="font-size:9px;opacity:.6">${x[0].slice(5)}</span>
+        </div>`).join('');
+      const cList=Object.entries(countries).sort((m,n)=>n[1]-m[1]);
+      const maxC=Math.max(1,...cList.map(x=>x[1]));
+      const flag=cc=>/^[A-Z]{2}$/.test(cc)?cc.replace(/./g,c=>String.fromCodePoint(127397+c.charCodeAt(0))):'🌐';
+      const cRows=cList.length?cList.map(x=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="width:52px">${flag(x[0])} ${esc(x[0])}</span>
+          <div style="flex:1;background:var(--line);border-radius:6px;overflow:hidden;height:10px"><div style="height:100%;width:${Math.round(x[1]/maxC*100)}%;background:var(--gold)"></div></div>
+          <b style="width:44px;text-align:end">${x[1]}</b>
+        </div>`).join(''):`<div class="pm-note">${t('لا توجد بيانات دول بعد','No country data yet')}</div>`;
+      const stat=(v,l)=>`<div class="panel" style="flex:1;min-width:130px;text-align:center;padding:16px"><div style="font-size:28px;font-weight:800;color:var(--gold)">${v}</div><div class="sub">${l}</div></div>`;
+      el.innerHTML=`
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          ${stat(total,t('إجمالي الزيارات','Total visits'))}
+          ${stat(today,t('زيارات اليوم','Today'))}
+          ${stat('<span id="anaActive">…</span>',t('نشطون الآن','Active now'))}
+        </div>
+        <div class="panel" style="padding:18px;margin-bottom:16px">
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:12px">${t('الزيارات — آخر ١٤ يوماً','Visits — last 14 days')}</h3>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:120px">${bars}</div>
+        </div>
+        <div class="panel" style="padding:18px;margin-bottom:16px">
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:12px">${t('من أين يدخلون','Where they come from')}</h3>
+          ${cRows}
+        </div>
+        <div class="panel" style="padding:18px">
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:12px">${t('المتصلون الآن','Online now')}</h3>
+          <div id="anaOnline"><div class="pm-note">${t('جارٍ التحميل…','Loading…')}</div></div>
+        </div>`;
+      const refreshOnline=async()=>{
+        let pres={};
+        try{ const s=await get(child(ref(db),'presence')); if(s.exists()) pres=s.val()||{}; }catch(e){}
+        const now=Date.now(); const live=Object.values(pres).filter(pp=>pp&&pp.at&&(now-pp.at)<120000);
+        const act=$('#anaActive'); if(act) act.textContent=live.length;
+        const box=$('#anaOnline'); if(box){
+          box.innerHTML = live.length
+            ? live.sort((m,n)=>n.at-m.at).map(pp=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+                <span>${esc(pp.name||t('زائر','Visitor'))}</span><span class="sub" style="font-size:12px">${esc(pp.page||'')}</span></div>`).join('')
+            : `<div class="pm-note">${t('لا أحد متصل الآن','No one online right now')}</div>`;
+        }
+      };
+      await refreshOnline();
+      admTimer=setInterval(refreshOnline, 15000);
+    }
+
+    /* ----- Referrals ----- */
+    async function grantReferralPremium(uid, done){
+      try{
+        const cur=await getPremium(uid);
+        const base=(cur && premiumActive(cur) && cur.expires)?cur.expires:Date.now();
+        const expires=base + 24*3600*1000;   // +1 day
+        const count=((cur && cur.count)?cur.count:0)+1;
+        await set(ref(db,'premium/'+uid), { active:true, plan:'referral', since:(cur&&cur.since)||Date.now(), expires, count });
+        await set(ref(db,'referralRewards/'+uid), { at:Date.now() });
+        toast(t('تم منح بريميوم يوم ✓','1-day premium granted ✓')); done&&done();
+      }catch(e){ console.error(e); toast(t('تعذّر — تأكد أنك داخل بحساب الأدمن (Google)','Failed — make sure you are signed in with the admin account (Google)')); }
+    }
+    async function renderReferrals(el){
+      const goal=10;
+      let refs={}, rewards={}, users={};
+      try{ const s=await get(child(ref(db),'referrals')); if(s.exists()) refs=s.val()||{}; }catch(e){}
+      try{ const s=await get(child(ref(db),'referralRewards')); if(s.exists()) rewards=s.val()||{}; }catch(e){}
+      try{ const s=await get(child(ref(db),'users')); if(s.exists()) users=s.val()||{}; }catch(e){}
+      const rows=Object.entries(refs).map(([ruid,kids])=>({uid:ruid,count:Object.keys(kids||{}).length}))
+        .filter(r=>r.count>0).sort((m,n)=>n.count-m.count);
+      const nameOf=uid=>{ const u=users[uid]; return u?(u.username||u.email||uid):uid; };
+      const eligible=rows.filter(r=>r.count>=goal && !rewards[r.uid]);
+      const card=(inner,title)=>`<div class="panel" style="padding:18px;margin-bottom:16px"><h3 style="font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:12px">${title}</h3>${inner}</div>`;
+      const eligHtml = eligible.length
+        ? eligible.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)">
+            <span><b>${esc(nameOf(r.uid))}</b> <span class="sub">— ${r.count} ${t('دعوة','referrals')}</span></span>
+            <button class="btn primary" data-grant-ref="${esc(r.uid)}" style="flex:0 0 auto;padding:7px 14px">${t('منح بريميوم يوم','Grant 1-day premium')}</button>
+          </div>`).join('')
+        : `<div class="pm-note">${t('لا أحد مؤهَّل للمكافأة الآن','No one is eligible for a reward right now')}</div>`;
+      const allHtml = rows.length
+        ? rows.map(r=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+            <span>${esc(nameOf(r.uid))}</span>
+            <span class="sub">${r.count}/${goal}${rewards[r.uid]?' · '+t('كوفئ ✓','rewarded ✓'):''}</span>
+          </div>`).join('')
+        : `<div class="pm-note">${t('لا توجد دعوات بعد','No referrals yet')}</div>`;
+      el.innerHTML = card(eligHtml,'🎁 '+t('مكافآت بانتظار الموافقة','Rewards awaiting approval')) + card(allHtml,t('كل الدعوات','All referrals'));
+      el.querySelectorAll('[data-grant-ref]').forEach(b=>b.onclick=()=>{
+        if(confirm(t('منح هذا العضو بريميوم ليوم واحد؟','Grant this member 1 day of premium?')))
+          grantReferralPremium(b.dataset.grantRef, ()=>renderReferrals(el));
+      });
+    }
 
     /* ----- Overview ----- */
     async function renderOverview(el){
@@ -3582,9 +3886,115 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
         if(currentUser) showMyProfiles(); else showAuth('login');
     }
   }
+  /* ---------- referral invite popup (share link → 1-day premium) ---------- */
+  function closeReferral(){ const o=$('#refOv'); if(o) o.remove(); }
+  async function openReferral(auto){
+    if(!currentUser){ gotoLogin(); return; }
+    closeReferral();
+    const goal=10;
+    const link=ROOT+'?ref='+currentUser.uid;
+    const introTxt=t('شارك رابطك — وبعد دخول '+goal+' مستخدمين منه تحصل على بريميوم يوماً كاملاً (بعد مراجعة الأدمن).','Share your link — after '+goal+' users join through it you get a full day of Premium (after admin review).');
+    const shareMsg=t('انضم إلى elgoharyX عبر رابطي: ','Join elgoharyX via my link: ')+link;
+    const ov=document.createElement('div');
+    ov.id='refOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:18px';
+    ov.innerHTML=`<div class="ref-card" style="background:var(--panel,#fff);color:var(--txt,#111);max-width:440px;width:100%;border-radius:18px;padding:24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.45);position:relative;border:1px solid var(--line,rgba(0,0,0,.1))">
+      <button id="refClose" title="${t('إغلاق','Close')}" style="position:absolute;top:12px;inset-inline-end:12px;background:none;border:none;font-size:22px;cursor:pointer;color:inherit;line-height:1">✕</button>
+      <div style="font-size:36px;text-align:center">🎁</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;text-align:center;margin:6px 0 6px">${t('ادعُ أصدقاءك واربح بريميوم','Invite friends, earn Premium')}</h3>
+      <p class="sub" style="text-align:center;margin-bottom:14px">${esc(introTxt)}</p>
+      <div id="refProgress" class="sub" style="text-align:center;margin-bottom:14px">${t('جارٍ التحميل…','Loading…')}</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="refLink" value="${esc(link)}" readonly dir="ltr" style="flex:1;min-width:0;font-family:monospace;font-size:12px"/>
+        <button class="btn primary" id="refCopy" style="flex:0 0 auto">${t('نسخ','Copy')}</button>
+      </div>
+      <a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(shareMsg)}" target="_blank" rel="noopener" style="width:100%;display:block;text-align:center;margin-bottom:10px">${t('مشاركة عبر واتساب','Share on WhatsApp')}</a>
+      ${auto?`<label style="display:flex;align-items:center;gap:8px;justify-content:center;font-size:13px;opacity:.85;cursor:pointer"><input type="checkbox" id="refHide"/> ${t('لا تُظهر هذه الرسالة مرة أخرى','Don\'t show this again')}</label>`:''}
+    </div>`;
+    document.body.appendChild(ov);
+    const close=()=>{ if(auto){ const h=$('#refHide'); if(h&&h.checked){ try{ localStorage.setItem('apb_ref_hide','1'); }catch(e){} } } closeReferral(); };
+    $('#refClose').onclick=close;
+    ov.onclick=e=>{ if(e.target===ov) close(); };
+    $('#refCopy').onclick=()=>{ const i=$('#refLink'); try{ navigator.clipboard.writeText(link); }catch(e){ try{ i.select(); document.execCommand('copy'); }catch(_){} } toast(t('تم نسخ الرابط ✓','Link copied ✓')); };
+    try{
+      const n=await referralCount(currentUser.uid);
+      const el=$('#refProgress');
+      if(el){
+        el.innerHTML = n>=goal
+          ? '<b style="color:var(--gold)">'+t('🎉 وصلت '+n+' — بانتظار موافقة الأدمن على مكافأتك','🎉 '+n+' reached — awaiting admin approval of your reward')+'</b>'
+          : t('دخل <b>'+n+'</b> من <b>'+goal+'</b> مستخدمين','<b>'+n+'</b> of <b>'+goal+'</b> users joined');
+      }
+    }catch(e){}
+  }
+
+  /* ---------- maintenance mode (admin-controlled) ----------
+     config/maintenance = { site:bool, explore:bool, profiles:bool, blogs:bool,
+     premium:bool, msg:string }. When a section (or the whole site) is on, every
+     visitor to it sees a maintenance page — except the admin, who always passes. */
+  let maintCfg=null;
+  async function loadMaintenance(){
+    try{ const s=await get(child(ref(db),'config/maintenance')); maintCfg = s.exists()? (s.val()||{}) : {}; }
+    catch(e){ maintCfg = {}; }
+    return maintCfg;
+  }
+  const MAINT_SECTION = {
+    'explore':'explore',
+    'view-profile':'profiles','new-profile':'profiles','my-profiles':'profiles',
+    'view-blog':'blogs','new-blog':'blogs','my-blog':'blogs',
+    'premium':'premium'
+  };
+  function maintOn(){
+    if(!maintCfg) return false;
+    if(maintCfg.site) return true;
+    const sec = MAINT_SECTION[PAGE];
+    return !!(sec && maintCfg[sec]);
+  }
+  function showMaintenancePage(){
+    document.title=t('صيانة — elgoharyX','Maintenance — elgoharyX');
+    try{ document.body.style.background=''; }catch(e){}
+    const msg=(maintCfg && maintCfg.msg) ? maintCfg.msg : t('نُجري بعض التحسينات على الموقع الآن. من فضلك عُد بعد قليل — نعتذر عن الإزعاج.','We are making some improvements right now. Please check back shortly — sorry for the inconvenience.');
+    const app=document.getElementById('app'); if(!app) return;
+    app.innerHTML=`<div class="err-wrap"><div class="err-card">
+      <img class="err-logo" src="${LOGO}" alt="elgoharyX"/>
+      <div class="err-code">🛠️</div>
+      <span class="err-tag"><i></i>${t('صيانة · MAINTENANCE','Maintenance · MAINTENANCE')}</span>
+      <h2 class="err-title">${t('الموقع تحت الصيانة','Under maintenance')}</h2>
+      <p class="err-msg">${esc(msg)}</p>
+      <div class="err-actions"><button class="btn ghost" onclick="location.reload()">${t('إعادة المحاولة','Try again')}</button></div>
+    </div></div>`;
+  }
+  /* route() wrapped with the maintenance gate — used by init() on every page load */
+  async function routeGuarded(){
+    if(maintCfg===null) await loadMaintenance();
+    if(maintOn()){
+      if(adminEmail===undefined) await loadAdminEmail();   // load so the admin can bypass
+      if(!isAdmin()){ showMaintenancePage(); return; }
+    }
+    route();
+  }
+  /* site telemetry + growth — runs once currentUser is resolved (or anonymously):
+     log the visit, mark live presence, record any pending referral, maybe pop the invite. */
+  function beginTracking(){
+    try{
+      const u=currentUser;
+      logVisit();
+      startPresence({ uid: u&&u.uid, name: u&&u.username, page: PAGE||'home' });
+      if(u&&u.uid){ recordReferralIfPending(u.uid); maybeReferralPopup(); }
+    }catch(e){}
+  }
+  function maybeReferralPopup(){
+    try{
+      if(!currentUser || isPremium()) return;
+      if(localStorage.getItem('apb_ref_hide')==='1') return;
+      if(sessionStorage.getItem('apb_ref_popup')==='1') return;
+      sessionStorage.setItem('apb_ref_popup','1');
+      setTimeout(()=>{ try{ openReferral(true); }catch(e){} }, 1600);
+    }catch(e){}
+  }
   (async function init(){
+    captureReferral();                                 // remember ?ref=… before anything else
     const uid=getSession();
-    if(!uid){ route(); return; }
+    if(!uid){ await routeGuarded(); beginTracking(); return; }
     loadAdminEmail();                                  // session-cached: reads the DB only on the first page of a session
     // refresh premium status in the background & cache it for the NEXT navigation only —
     // we never flip the gate mid-view, so the current page stays fully consistent.
@@ -3593,7 +4003,7 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
     const cached=getCachedUser();
     if(cached && cached.uid===uid){
       // instant render from the local cache — no database read needed
-      currentUser=cached; route();
+      currentUser=cached; await routeGuarded(); beginTracking();
       // touch the database at most ONCE per browser session; later pages use the cache
       if(!refreshed){
         try{ sessionStorage.setItem(REFRESH_KEY,'1'); }catch(e){}
@@ -3609,5 +4019,5 @@ import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, curre
     let rec=null;
     try{ rec=await Promise.race([loadUserRecord(uid), new Promise(r=>setTimeout(()=>r(null),8000))]); }catch(e){}
     if(rec){ currentUser={uid, email:rec.email||'', username:rec.username||t('مستخدم','User'), photo:rec.photo||''}; cacheUser(currentUser); }
-    route(); applyPrem();
+    await routeGuarded(); beginTracking(); applyPrem();
   })();
