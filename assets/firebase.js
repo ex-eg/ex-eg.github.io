@@ -46,19 +46,26 @@ const app = initializeApp(firebaseConfig);
    before any DB read, and an enforced App Check would block reading the key from
    the DB — so localStorage, not a live DB read, is the source here). The first
    key is the active one; the rest are spares the admin can promote. */
-const DEFAULT_CAPTCHA_KEYS = ['6Lf8MEktAAAAANMCvGRCqGGMc2WvfL_0ZPsPHqxq'];
+const DEFAULT_CAPTCHA_KEYS = ['6LcZP0ktAAAAAP4C-bDF3Qd1ttTyeUcvTGrdihSy'];
 export function captchaKeys(){
   try{ const s = localStorage.getItem('apb_captcha_keys'); if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.filter(Boolean).length) return a.filter(Boolean); } }catch(e){}
   return DEFAULT_CAPTCHA_KEYS.slice();
 }
 
-/* App Check — attests that requests come from the real elgoharyX site. */
+/* App Check — attests that requests come from the real elgoharyX site.
+   IMPORTANT: App Check ALWAYS uses the hardcoded DEFAULT_CAPTCHA_KEYS[0] — NOT the
+   localStorage/DB-overridable captchaKeys(). A stale key cached in localStorage or
+   config/captchaKeys would otherwise be sent to App Check, mismatch the key
+   registered in the Firebase console, and get every request (incl. login) rejected
+   with 401. Tying it to the deployed code key makes it deterministic: the key you
+   register in App Check === the key in this file. To rotate, change the const above
+   and re-register the matching key/secret in the Firebase App Check console. */
 try {
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
   }
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(captchaKeys()[0]),
+    provider: new ReCaptchaV3Provider(DEFAULT_CAPTCHA_KEYS[0]),
     isTokenAutoRefreshEnabled: true
   });
 } catch (e) { console.warn('App Check init skipped:', e); }
