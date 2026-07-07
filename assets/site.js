@@ -65,10 +65,13 @@ export async function recordReferralIfPending(uid){
   if(!uid) return;
   let code; try{ code = localStorage.getItem('apb_ref'); }catch(e){}
   if(!code || code === uid) return;
-  try{ if(localStorage.getItem('apb_ref_done') === '1') return; }catch(e){}
+  // scope the "already recorded" flag per account, so a different account created on
+  // the same browser after arriving via the same link still counts as a real referral.
+  const doneKey = 'apb_ref_done_' + uid;
+  try{ if(localStorage.getItem(doneKey) === '1') return; }catch(e){}
   try{
     await set(ref(db, 'referrals/' + code + '/' + uid), Date.now());
-    try{ localStorage.setItem('apb_ref_done', '1'); }catch(e){}
+    try{ localStorage.setItem(doneKey, '1'); }catch(e){}
   }catch(e){}
 }
 /* how many distinct accounts a user has referred so far. */

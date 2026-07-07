@@ -30,10 +30,10 @@ export const urlMyBlog      = ()  => pageUrl('my-blog.html');
 export const urlHub         = ()  => pageUrl('hub.html');
 export const urlNewProfile  = ()  => pageUrl('create-profile.html');
 export const urlNewBlog     = ()  => pageUrl('create-blog.html');
-export const urlProfileView = id  => pageUrl('profile.html', 'id=' + encodeURIComponent(id));
-export const urlProfileEdit = id  => pageUrl('create-profile.html', 'edit=' + encodeURIComponent(id));
-export const urlBlogView    = id  => pageUrl('blog.html', 'blog=' + encodeURIComponent(id));
-export const urlBlogEdit    = id  => pageUrl('create-blog.html', 'blogedit=' + encodeURIComponent(id));
+export const urlProfileView = id  => pageUrl('profile.html', 'id=' + id);
+export const urlProfileEdit = id  => pageUrl('create-profile.html', 'edit=' + id);
+export const urlBlogView    = id  => pageUrl('blog.html', 'blog=' + id);
+export const urlBlogEdit    = id  => pageUrl('create-blog.html', 'blogedit=' + id);
 /* send a logged-out visitor to the login page, remembering where to return. */
 export const gotoLogin = () => { location.href = urlLogin() + '?next=' + encodeURIComponent(location.href); };
 
