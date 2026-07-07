@@ -46,7 +46,7 @@ const app = initializeApp(firebaseConfig);
    before any DB read, and an enforced App Check would block reading the key from
    the DB — so localStorage, not a live DB read, is the source here). The first
    key is the active one; the rest are spares the admin can promote. */
-const DEFAULT_CAPTCHA_KEYS = ['6LdjuUUtAAAAAG9D85LTSaK0HM5UoIrzgHnHB5DG'];
+const DEFAULT_CAPTCHA_KEYS = ['6Lf8MEktAAAAANMCvGRCqGGMc2WvfL_0ZPsPHqxq'];
 export function captchaKeys(){
   try{ const s = localStorage.getItem('apb_captcha_keys'); if(s){ const a = JSON.parse(s); if(Array.isArray(a) && a.filter(Boolean).length) return a.filter(Boolean); } }catch(e){}
   return DEFAULT_CAPTCHA_KEYS.slice();
