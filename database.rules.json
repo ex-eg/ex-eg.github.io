@@ -98,7 +98,7 @@
       ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
       "$uid": {
         ".read": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
-        ".write": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
         ".validate": "newData.hasChildren(['username','email','createdAt'])",
         "username":  { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40" },
         "email":     { ".validate": "newData.isString() && newData.val().length <= 160" },
@@ -114,7 +114,7 @@
     "usernames": {
       "$name": {
         ".read": true,
-        ".write": "auth != null && ( ( newData.exists() && newData.val() === auth.uid && ( !data.exists() || data.val() === auth.uid ) ) || ( !newData.exists() && data.val() === auth.uid ) )",
+        ".write": "auth != null && ( ( newData.exists() && newData.val() === auth.uid && ( !data.exists() || data.val() === auth.uid ) ) || ( !newData.exists() && data.val() === auth.uid ) || root.child('config/adminEmail').val() === auth.token.email )",
         ".validate": "newData.isString() && newData.val().length <= 64"
       }
     },
@@ -122,7 +122,7 @@
     "emails": {
       "$enc": {
         ".read": true,
-        ".write": "auth != null && ( ( newData.exists() && newData.val() === auth.uid && ( !data.exists() || data.val() === auth.uid ) ) || ( !newData.exists() && data.val() === auth.uid ) )",
+        ".write": "auth != null && ( ( newData.exists() && newData.val() === auth.uid && ( !data.exists() || data.val() === auth.uid ) ) || ( !newData.exists() && data.val() === auth.uid ) || root.child('config/adminEmail').val() === auth.token.email )",
         ".validate": "newData.isString() && newData.val().length <= 64"
       }
     },
@@ -147,7 +147,7 @@
     "userProfiles": {
       "$uid": {
         ".read": true,
-        ".write": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
         "$id": {
           ".validate": "$id.matches(/^[A-Za-z0-9]{1,64}$/) && newData.hasChildren(['updatedAt'])",
           "name":      { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 200)" },
@@ -184,7 +184,7 @@
     "userBlogs": {
       "$uid": {
         ".read": true,
-        ".write": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
         "$id": {
           ".validate": "$id.matches(/^[A-Za-z0-9]{1,64}$/) && newData.hasChildren(['updatedAt'])",
           "title":     { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 300)" },
@@ -229,7 +229,7 @@
         "$idx": {
           "views": {
             ".write": true,
-            ".validate": "newData.isNumber() && newData.val() >= 0"
+            ".validate": "newData.isNumber() && newData.val() >= 0 && ( newData.val() === (data.exists() ? data.val() : 0) + 1 || ( auth != null && root.child('config/adminEmail').val() === auth.token.email ) )"
           },
           "likes": {
             "$uid": {
@@ -274,9 +274,9 @@
 
     "analytics": {
       ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
-      "total": { ".write": true, ".validate": "newData.isNumber()" },
-      "daily":     { "$d": { ".write": true, ".validate": "newData.isNumber()" } },
-      "countries": { "$c": { ".write": true, ".validate": "newData.isNumber()" } }
+      "total": { ".write": true, ".validate": "newData.isNumber() && ( newData.val() === (data.exists() ? data.val() : 0) + 1 || ( auth != null && root.child('config/adminEmail').val() === auth.token.email ) )" },
+      "daily":     { "$d": { ".write": true, ".validate": "newData.isNumber() && ( newData.val() === (data.exists() ? data.val() : 0) + 1 || ( auth != null && root.child('config/adminEmail').val() === auth.token.email ) )" } },
+      "countries": { "$c": { ".write": true, ".validate": "newData.isNumber() && ( newData.val() === (data.exists() ? data.val() : 0) + 1 || ( auth != null && root.child('config/adminEmail').val() === auth.token.email ) )" } }
     },
 
     "presence": {
@@ -314,7 +314,7 @@
       ".read": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
       "$uid": {
         ".read": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
-        ".write": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && ( auth.uid === $uid || root.child('config/adminEmail').val() === auth.token.email )",
         ".validate": "newData.hasChildren(['at'])",
         "username": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 60)" },
         "email":    { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 160)" },
