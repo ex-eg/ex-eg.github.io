@@ -12,7 +12,7 @@ import {
 } from './firebase.js';
 import {
   ROOT, PAGE, curLang, t, pageUrl,
-  urlHome, urlExplore, urlLogin, urlMyProfiles, urlMyBlog, urlNewProfile, urlNewBlog,
+  urlHome, urlExplore, urlLogin, urlMyProfiles, urlMyBlog, urlHub, urlNewProfile, urlNewBlog,
   urlProfileView, urlProfileEdit, urlBlogView, urlBlogEdit, gotoLogin,
   LOGO, SUN, MOON, UICON, TAB,
   $, esc, toast, initials, setMeta, seoFor, renderError, fatalError,
@@ -599,6 +599,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     const right = currentUser ? `
         <button class="btn ghost ab-only" data-act="mode" title="${t('الوضع','Theme')}" style="padding:9px 12px">${modeIcon()}</button>
         <div class="ab-nav">
+          <a class="btn ghost" href="${urlHub()}" style="padding:9px 15px;font-size:13px${active==='hub'?';border-color:var(--gold);color:var(--txt)':''}">${t('لوحتي','My Hub')}</a>
           <a class="btn ghost" href="${urlExplore()}" style="padding:9px 15px;font-size:13px${active==='explore'?';border-color:var(--gold);color:var(--txt)':''}">${t('استكشف','Explore')}</a>
           <a class="btn ghost" href="${urlMyProfiles()}" style="padding:9px 15px;font-size:13px${active==='mine'?';border-color:var(--gold);color:var(--txt)':''}">${t('بروفايلاتي','My Profiles')}</a>
           <a class="btn ghost" href="${urlMyBlog()}" style="padding:9px 15px;font-size:13px${active==='blogs'?';border-color:var(--gold);color:var(--txt)':''}">${t('مدونتي','My Blog')}</a>
@@ -638,6 +639,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
           <div class="dr-id"><div class="dr-name">${esc(currentUser.username)}</div><div class="dr-sub">${esc(currentUser.email||t('حساب elgoharyX','elgoharyX account'))}</div></div>
         </a>
         <nav class="drawer-nav">
+          <a class="dr-item ${active==='hub'?'on':''}" href="${urlHub()}">${UICON.grid}<span>${t('لوحتي — كل بروفايلاتي ومدوناتي','My Hub — all my profiles & blogs')}</span></a>
           <a class="dr-item ${active==='account'?'on':''}" href="${pageUrl('account.html')}">${UICON.person}<span>${t('الملف الشخصي','Profile')}</span></a>
           <a class="dr-item dr-vip ${active==='premium'?'on':''}" href="${pageUrl('premium.html')}">${CROWN}<span>${t('الاشتراك المميز','Premium')}</span></a>
           <button class="dr-item" data-act="invite"><span style="font-size:18px">🎁</span><span>${t('ادعُ أصدقاءك — بريميوم مجاني','Invite friends — free Premium')}</span></button>
@@ -920,6 +922,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     share:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5"/></svg>',
     link:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
     up:'<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>',
+    qr:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M20 14v.01M14 20v.01M20 20v.01M17 17v.01M20 17h.01M17 20h.01"/></svg>',
   };
 
   /* ---------- account / profile page (edit account + avatar) ---------- */
@@ -1037,6 +1040,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
               <button data-edit="${p.id}">${IC2.pen} ${t('تعديل','Edit')}</button>
               <button data-share="${p.id}">${IC2.share} ${t('مشاركة للتعديل','Share for editing')}</button>
               <button data-link="${p.id}">${IC2.link} ${t('الرابط','Link')}</button>
+              <button data-qr="${p.id}" data-qrname="${esc(p.name||'')}">${IC2.qr} ${t('رمز QR','QR code')}</button>
               <button class="del" data-del="${p.id}">${t('حذف','Delete')}</button>
             </div>
           </div>
@@ -1044,6 +1048,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       $('#mpList').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
       $('#mpList').querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileView(b.dataset.link));toast(t('تم نسخ رابط العرض ✓','View link copied ✓'));});
       $('#mpList').querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileEdit(b.dataset.share));toast(t('تم نسخ رابط التعديل ✓ — شاركه لمن يعدّل البروفايل','Edit link copied ✓ — share it with your co-editor'));});
+      $('#mpList').querySelectorAll('[data-qr]').forEach(b=>b.onclick=()=>openQR(urlProfileView(b.dataset.qr), b.dataset.qrname||t('بروفايل','Profile')));
       $('#mpList').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
         if(!confirm(t('حذف هذا البروفايل نهائياً؟','Permanently delete this profile?'))) return;
         try{ await remove(ref(db,'profiles/'+b.dataset.del)); await remove(ref(db,'userProfiles/'+currentUser.uid+'/'+b.dataset.del)); toast(t('تم الحذف','Deleted')); showMyProfiles(); }
@@ -1052,6 +1057,155 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     }catch(e){
       console.error(e);
       $('#mpList').innerHTML=`<div class="mp-empty">${t('تعذّر تحميل البروفايلات. تحقّق من قواعد قاعدة البيانات.','Failed to load profiles. Check the database rules.')}</div>`;
+    }
+  }
+
+  /* ---------- QR code generator (shared modal) ----------
+     Renders a QR for any public link (profile / blog) so the client can print it,
+     share it, or let visitors scan it. The image is produced by the free goqr.me
+     endpoint (CORS-enabled), then downloaded as a blob; if that fails we fall back
+     to opening the image directly. Needs an internet connection. */
+  const qrImgSrc=(url,size=440)=>'https://api.qrserver.com/v1/create-qr-code/?margin=12&size='+size+'x'+size+'&data='+encodeURIComponent(url);
+  function closeQR(){ const o=$('#qrOv'); if(o) o.remove(); }
+  function openQR(url, label){
+    closeQR();
+    const safeLabel = label ? String(label).slice(0,60) : t('رابط','Link');
+    const ov=document.createElement('div');
+    ov.id='qrOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:18px';
+    ov.innerHTML=`<div class="qr-card" style="background:var(--panel,#fff);color:var(--txt,#111);max-width:400px;width:100%;border-radius:18px;padding:24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.45);position:relative;border:1px solid var(--line,rgba(0,0,0,.12));text-align:center">
+      <button id="qrClose" title="${t('إغلاق','Close')}" style="position:absolute;top:12px;inset-inline-end:12px;background:none;border:none;font-size:22px;cursor:pointer;color:inherit;line-height:1">✕</button>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;margin:2px 0 4px">${t('رمز QR','QR code')}</h3>
+      <p class="sub" style="margin-bottom:16px;word-break:break-word">${esc(safeLabel)}</p>
+      <div style="background:#fff;border-radius:14px;padding:14px;display:inline-block;box-shadow:0 4px 18px rgba(0,0,0,.12)">
+        <img id="qrImg" src="${esc(qrImgSrc(url))}" alt="QR" width="240" height="240" style="display:block;width:240px;height:240px;image-rendering:pixelated" onerror="this.parentElement.innerHTML='<div style=&quot;padding:40px;color:#b91c1c;font-size:13px&quot;>${t('تعذّر إنشاء الرمز — تحقّق من الاتصال','Could not create the code — check your connection')}</div>'"/>
+      </div>
+      <div style="display:flex;gap:8px;margin:16px 0 10px">
+        <input id="qrLink" value="${esc(url)}" readonly dir="ltr" style="flex:1;min-width:0;font-family:monospace;font-size:12px"/>
+        <button class="btn ghost" id="qrCopy" style="flex:0 0 auto">${t('نسخ','Copy')}</button>
+      </div>
+      <button class="btn primary" id="qrDl" style="width:100%">${IC2.up} ${t('تحميل الرمز (PNG)','Download code (PNG)')}</button>
+      <p class="sub" style="font-size:12px;margin-top:12px;opacity:.8">${t('اطبعه أو ضعه على بطاقتك — أي شخص يصوّره يفتح الرابط مباشرة.','Print it or add it to your card — anyone who scans it opens the link instantly.')}</p>
+    </div>`;
+    document.body.appendChild(ov);
+    $('#qrClose').onclick=closeQR;
+    ov.onclick=e=>{ if(e.target===ov) closeQR(); };
+    document.addEventListener('keydown',function esc0(e){ if(e.key==='Escape'){ closeQR(); document.removeEventListener('keydown',esc0); } });
+    $('#qrCopy').onclick=()=>{ try{ navigator.clipboard.writeText(url); }catch(e){ const i=$('#qrLink'); try{ i.select(); document.execCommand('copy'); }catch(_){}} toast(t('تم نسخ الرابط ✓','Link copied ✓')); };
+    $('#qrDl').onclick=async()=>{
+      const fname='elgoharyX-qr-'+String(safeLabel).replace(/[^\w؀-ۿ-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40).toLowerCase()+'.png';
+      try{
+        const r=await fetch(qrImgSrc(url,600));
+        if(!r.ok) throw new Error('bad');
+        const blob=await r.blob();
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob); a.download=fname||'elgoharyX-qr.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+        toast(t('تم تحميل الرمز ✓','QR downloaded ✓'));
+      }catch(e){ window.open(qrImgSrc(url,600),'_blank','noopener'); }
+    };
+  }
+
+  /* ---------- workspace hub: all profiles + the blog in one screen ----------
+     The client lands here from the main screen to manage everything in one place:
+     view / edit / copy-link / QR / delete every profile, plus the account's blog. */
+  async function showHub(){
+    if(!currentUser){ showAuth('login'); return; }
+    document.title=t('لوحتي — كل بروفايلاتي ومدوناتي | elgoharyX','My Hub — all my profiles & blogs | elgoharyX');
+    document.body.style.background='';
+    $('#app').innerHTML = appbar('hub') + `<div class="wrap">
+      <div class="mp-head">
+        <div><h2>${t('لوحتي','My Hub')}</h2><div class="sub">${t('كل بروفايلاتك ومدوناتك في مكان واحد — اعرض، عدّل، شارك، وأنشئ رمز QR بضغطة.','All your profiles and blogs in one place — view, edit, share, and make a QR code in one tap.')}</div></div>
+        <div class="hub-head-acts">
+          <a class="btn primary" href="${urlNewProfile()}" style="width:auto;padding:11px 18px">+ ${t('بروفايل','Profile')}</a>
+          <a class="btn ghost" href="${urlNewBlog()}" style="width:auto;padding:11px 18px">+ ${t('مدونة','Blog')}</a>
+        </div>
+      </div>
+      <div class="hub-sec">
+        <div class="hub-sec-bar"><h3>${TAB.cards} ${t('بروفايلاتي','My Profiles')} <span id="hubPCount" class="hub-count"></span></h3>
+          <a class="hub-more" href="${urlMyProfiles()}">${t('إدارة كل البروفايلات','Manage all profiles')} ›</a></div>
+        <div id="hubProfiles">${skelGrid(3)}</div>
+      </div>
+      <div class="hub-sec">
+        <div class="hub-sec-bar"><h3>${UICON.chat} ${t('مدونتي','My Blog')}</h3>
+          <a class="hub-more" href="${urlMyBlog()}">${t('إدارة التدوينات','Manage posts')} ›</a></div>
+        <div id="hubBlog">${skelGrid(1)}</div>
+      </div>
+    </div>` + drawer('hub');
+    wireAppbar();
+
+    /* ----- profiles ----- */
+    try{
+      const s=await get(child(ref(db),'userProfiles/'+currentUser.uid));
+      const list = s.exists()? Object.entries(s.val()).map(([id,v])=>({id,...v})) : [];
+      list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+      const cnt=$('#hubPCount'); if(cnt) cnt.textContent=list.length?('· '+list.length):'';
+      if(!list.length){
+        $('#hubProfiles').innerHTML=`<div class="mp-empty">${t('لا توجد بروفايلات بعد.','No profiles yet.')}<br><br>
+          <a class="btn primary" href="${urlNewProfile()}" style="width:auto;padding:11px 20px">${t('أنشئ أول بروفايل','Create your first profile')}</a></div>`;
+      }else{
+        $('#hubProfiles').innerHTML=`<div class="mp-grid">${list.map(p=>`
+          <div class="mp-card">
+            <div class="mp-cover" style="background:${COVERS[p.template]||COVERS.royal}"><span class="badge">${esc((TEMPLATES.find(t=>t.id===p.template)||{}).name||'')}</span>${p.locked?'<span class="mp-lock" title="'+t('محمي بكلمة مرور','Password protected')+'">🔒</span>':''}</div>
+            <div class="mp-body">
+              <div class="mp-name">${esc(p.name||t('بدون اسم','Untitled'))}</div>
+              <div class="mp-meta">${t('آخر تحديث:','Last update:')} ${p.updatedAt?new Date(p.updatedAt).toLocaleDateString(curLang()==='en'?'en-GB':'ar-EG'):'—'}</div>
+              <div class="mp-actions">
+                <a href="${urlProfileView(p.id)}" target="_blank">${IC2.eye} ${t('عرض','View')}</a>
+                <button data-hedit="${p.id}">${IC2.pen} ${t('تعديل','Edit')}</button>
+                <button data-hlink="${p.id}">${IC2.link} ${t('الرابط','Link')}</button>
+                <button data-hqr="${p.id}" data-hqrname="${esc(p.name||'')}">${IC2.qr} ${t('رمز QR','QR code')}</button>
+                <button class="del" data-hdel="${p.id}">${t('حذف','Delete')}</button>
+              </div>
+            </div>
+          </div>`).join('')}</div>`;
+        $('#hubProfiles').querySelectorAll('[data-hedit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.hedit));
+        $('#hubProfiles').querySelectorAll('[data-hlink]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileView(b.dataset.hlink));toast(t('تم نسخ رابط العرض ✓','View link copied ✓'));});
+        $('#hubProfiles').querySelectorAll('[data-hqr]').forEach(b=>b.onclick=()=>openQR(urlProfileView(b.dataset.hqr), b.dataset.hqrname||t('بروفايل','Profile')));
+        $('#hubProfiles').querySelectorAll('[data-hdel]').forEach(b=>b.onclick=async()=>{
+          if(!confirm(t('حذف هذا البروفايل نهائياً؟','Permanently delete this profile?'))) return;
+          try{ await remove(ref(db,'profiles/'+b.dataset.hdel)); await remove(ref(db,'userProfiles/'+currentUser.uid+'/'+b.dataset.hdel)); toast(t('تم الحذف','Deleted')); showHub(); }
+          catch(e){ console.error(e); toast(t('تعذّر الحذف','Delete failed')); }
+        });
+      }
+    }catch(e){
+      console.error(e);
+      $('#hubProfiles').innerHTML=`<div class="mp-empty">${t('تعذّر تحميل البروفايلات.','Failed to load profiles.')}</div>`;
+    }
+
+    /* ----- blog ----- */
+    try{
+      const s=await get(child(ref(db),'userBlogs/'+currentUser.uid));
+      const entries = s.exists()? Object.entries(s.val()) : [];
+      if(!entries.length){
+        $('#hubBlog').innerHTML=`<div class="mp-empty">${t('لا توجد مدونة بعد.','No blog yet.')}<br><br>
+          <a class="btn primary" href="${urlNewBlog()}" style="width:auto;padding:11px 20px">${t('أنشئ مدونتك','Create your Blog')}</a></div>`;
+      }else{
+        entries.sort((a,b)=>((b[1]&&b[1].updatedAt)||0)-((a[1]&&a[1].updatedAt)||0));
+        const id=entries[0][0]; const b=entries[0][1]||{};
+        let count=''; try{ const ix=await get(child(ref(db),'blogIndex/'+id)); if(ix.exists()&&ix.val()&&ix.val().count!=null) count=ix.val().count+' '+t('تدوينة','posts'); }catch(_){}
+        const dz=blogDesign(b.design);
+        const grad=`linear-gradient(135deg,${dz.accent},${dz.accent2})`;
+        $('#hubBlog').innerHTML=`<div class="mp-grid"><div class="mp-card hub-blog-card">
+          <div class="mp-cover" style="background:${grad}"><span class="badge">${esc(dz.name||'')}</span></div>
+          <div class="mp-body">
+            <div class="mp-name">${esc(b.title||t('مدونتي','My Blog'))}</div>
+            <div class="mp-meta">${count?count+' · ':''}${t('آخر تحديث:','Last update:')} ${b.updatedAt?new Date(b.updatedAt).toLocaleDateString(curLang()==='en'?'en-GB':'ar-EG'):'—'}</div>
+            <div class="mp-actions">
+              <a href="${urlBlogView(id)}" target="_blank">${IC2.eye} ${t('عرض','View')}</a>
+              <a href="${urlMyBlog()}">${IC2.pen} ${t('إدارة التدوينات','Manage posts')}</a>
+              <button data-hbloglink>${IC2.link} ${t('الرابط','Link')}</button>
+              <button data-hblogqr>${IC2.qr} ${t('رمز QR','QR code')}</button>
+            </div>
+          </div>
+        </div></div>`;
+        const lk=$('#hubBlog').querySelector('[data-hbloglink]'); if(lk) lk.onclick=()=>{navigator.clipboard?.writeText(urlBlogView(id));toast(t('تم نسخ رابط المدونة ✓','Blog link copied ✓'));};
+        const qr=$('#hubBlog').querySelector('[data-hblogqr]'); if(qr) qr.onclick=()=>openQR(urlBlogView(id), b.title||t('مدونتي','My Blog'));
+      }
+    }catch(e){
+      console.error(e);
+      $('#hubBlog').innerHTML=`<div class="mp-empty">${t('تعذّر تحميل المدونة.','Failed to load the blog.')}</div>`;
     }
   }
 
@@ -2265,6 +2419,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         <div class="badm-acts">
           <a href="${urlBlogView(id)}" target="_blank">${IC2.eye} ${t('عرض المدونة','View Blog')}</a>
           <button id="baLink">${IC2.link} ${t('نسخ الرابط','Copy Link')}</button>
+          <button id="baQR">${IC2.qr} ${t('رمز QR','QR code')}</button>
           <button id="baEdit">${IC2.pen} ${t('تعديل بيانات المدونة','Edit Blog Details')}</button>
         </div>
       </div>
@@ -2309,6 +2464,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       };
       const wire=()=>{
         $('#baLink')&&($('#baLink').onclick=()=>{navigator.clipboard?.writeText(urlBlogView(id));toast(t('تم نسخ رابط المدونة ✓','Blog link copied ✓'));});
+        $('#baQR')&&($('#baQR').onclick=()=>openQR(urlBlogView(id), d.title||t('مدونتي','My Blog')));
         $('#baEdit')&&($('#baEdit').onclick=()=>startBlogEdit(id));
         $('#baNew')&&($('#baNew').onclick=()=>startBlogEdit(id,'new'));
         document.querySelectorAll('[data-pedit]').forEach(b=>b.onclick=()=>startBlogEdit(id,+b.dataset.pedit));
@@ -3076,12 +3232,23 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   }
 
   let adminEmail = undefined; // undefined = not loaded yet, null = none
-  async function loadAdminEmail(){
-    // session cache: read the admin email from the DB only once per browser session
-    try{ const c=sessionStorage.getItem(ADMIN_EMAIL_KEY); if(c!==null){ adminEmail = c||null; return adminEmail; } }catch(e){}
-    try{ const s=await get(child(ref(db),'config/adminEmail')); adminEmail = s.exists()? String(s.val()).trim().toLowerCase() : null; }
-    catch(e){ adminEmail = null; }
-    try{ sessionStorage.setItem(ADMIN_EMAIL_KEY, adminEmail||''); }catch(e){}
+  async function loadAdminEmail(force){
+    // session cache: read the admin email from the DB only once per browser session.
+    // IMPORTANT: only a SUCCESSFUL, non-empty read is ever cached. A failed or empty
+    // read is never persisted, otherwise a single transient DB hiccup (e.g. right
+    // after a service-worker update, before Firebase is ready) would cache "" and
+    // then return null for the rest of the tab session — locking the real admin out
+    // of the panel with a false 404 until they closed every tab. `force` bypasses the
+    // cache to re-verify straight from the DB (used by the admin gate).
+    if(!force){
+      try{ const c=sessionStorage.getItem(ADMIN_EMAIL_KEY); if(c){ adminEmail = c; return adminEmail; } }catch(e){}
+    }
+    try{
+      const s=await get(child(ref(db),'config/adminEmail'));
+      adminEmail = s.exists()? String(s.val()).trim().toLowerCase() : null;
+    }
+    catch(e){ if(adminEmail===undefined) adminEmail = null; }   // don't downgrade a known-good value on error
+    try{ if(adminEmail) sessionStorage.setItem(ADMIN_EMAIL_KEY, adminEmail); }catch(e){}
     return adminEmail;
   }
   const isAdmin = () => !!(currentUser && adminEmail && (currentUser.email||'').trim().toLowerCase()===adminEmail);
@@ -3221,6 +3388,10 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   }
   async function showAdmin(){
     if(adminEmail===undefined) await loadAdminEmail();
+    // before locking a signed-in user out with a 404, re-verify the admin email
+    // straight from the DB — guards against a stale/empty cached value wrongly
+    // 404ing the real admin (see loadAdminEmail).
+    if(currentUser && !isAdmin()) await loadAdminEmail(true);
     if(!isAdmin()){ showAdmin404(); return; }     // non-admins get a blank 404 — the panel stays hidden
     document.title=t('لوحة تحكّم الأدمن — elgoharyX','Admin Dashboard — elgoharyX');
     document.body.style.background='';
@@ -3895,6 +4066,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       case 'account':     needLogin(showAccount); return;
       case 'premium':     needLogin(showPremium); return;
       case 'admin':       showAdmin(); return;   // showAdmin() shows a blank 404 to any non-admin (incl. logged-out)
+      case 'hub':         needLogin(showHub); return;
       case 'my-profiles': needLogin(showMyProfiles); return;
       case 'my-blog':     needLogin(showBlogAdmin); return;
       case 'new-profile': needLogin(()=> q('edit')?startEdit(q('edit')):newProfile()); return;

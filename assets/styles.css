@@ -974,6 +974,21 @@
   .mp-actions .del:hover{border-color:#ff6b6b;color:#ff9a9a}
   .mp-empty{border:1px dashed var(--stroke);border-radius:14px;padding:44px 20px;text-align:center;color:var(--muted)}
 
+  /* ---------- workspace hub ---------- */
+  .hub-head-acts{display:flex;gap:9px;flex-wrap:wrap}
+  .hub-sec{margin-top:30px}
+  .hub-sec:first-of-type{margin-top:8px}
+  .hub-sec-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .hub-sec-bar h3{font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:600;color:var(--txt);display:inline-flex;align-items:center;gap:9px}
+  .hub-sec-bar h3 svg{width:19px;height:19px;color:var(--gold-2)}
+  .hub-count{font-size:12.5px;color:var(--muted-2);font-family:inherit;font-weight:400}
+  .hub-more{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--stroke-soft);padding:6px 13px;border-radius:100px;transition:.18s;white-space:nowrap}
+  .hub-more:hover{color:var(--gold-2);border-color:var(--gold)}
+  .hub-blog-card .mp-cover{height:78px}
+  /* qr modal */
+  .qr-card .sub{color:var(--muted)}
+  .qr-card input#qrLink{border:1px solid var(--stroke);background:var(--bg-2);color:var(--txt);border-radius:8px;padding:9px 10px}
+
   /* ---------- error screen ---------- */
   .err-wrap{min-height:calc(100vh - 62px);display:grid;place-items:center;padding:40px 18px}
   .err-card{width:min(560px,100%);text-align:center;position:relative;overflow:hidden;

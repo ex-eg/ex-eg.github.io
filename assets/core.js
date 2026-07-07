@@ -27,6 +27,7 @@ export const urlExplore     = ()  => pageUrl('explore.html');
 export const urlLogin       = ()  => pageUrl('login.html');
 export const urlMyProfiles  = ()  => pageUrl('my-profiles.html');
 export const urlMyBlog      = ()  => pageUrl('my-blog.html');
+export const urlHub         = ()  => pageUrl('hub.html');
 export const urlNewProfile  = ()  => pageUrl('create-profile.html');
 export const urlNewBlog     = ()  => pageUrl('create-blog.html');
 export const urlProfileView = id  => pageUrl('profile.html', 'id=' + id);
