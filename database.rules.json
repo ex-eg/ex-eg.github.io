@@ -17,6 +17,10 @@
         "hash": { ".validate": "newData.isString() && newData.val().length <= 128" },
         "at":   { ".validate": "!newData.exists() || newData.isNumber()" },
         "$other": { ".validate": false }
+      },
+      "imgbbKeys": {
+        ".write": "auth != null && root.child('config/adminEmail').val() === auth.token.email",
+        "$i": { ".validate": "newData.isString() && newData.val().length <= 200" }
       }
     },
 
