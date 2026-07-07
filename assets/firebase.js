@@ -69,16 +69,23 @@ try {
    each load for the NEXT load) — they must be available before any DB read, so a
    live DB read cannot be the source. */
 const DEFAULT_DB_URL = firebaseConfig.databaseURL;
+/* escape hatch: ?dbreset=1 clears saved backup DBs for a clean single-DB session
+   (recover from a bad/misconfigured backup URL so you can fix it in Settings). */
+let DBRESET = false;
+try{ DBRESET = /[?&]dbreset=1/.test(location.search); if(DBRESET){ localStorage.removeItem('apb_db_urls'); localStorage.removeItem('apb_db_active'); } }catch(e){}
 const dedupe = arr => { const seen = new Set(), out = []; for(const x of arr){ if(x && !seen.has(x)){ seen.add(x); out.push(x); } } return out; };
 function backupUrls(){
-  try{ const s = localStorage.getItem('apb_db_urls'); if(s){ const a = JSON.parse(s); if(Array.isArray(a)) return a.map(x=>String(x||'').trim()).filter(Boolean); } }catch(e){}
+  try{ const s = localStorage.getItem('apb_db_urls'); if(s){ const a = JSON.parse(s); if(Array.isArray(a)) return a.map(x=>String(x||'').trim()).filter(u=>/^https:\/\/.+/i.test(u)); } }catch(e){}
   return [];
 }
 function allUrls(){ return dedupe([DEFAULT_DB_URL, ...backupUrls()]); }
 
 const URLS = allUrls();
-const dbs = URLS.map(u => getDatabase(app, u));   // one instance per URL
+let dbs = URLS.map(u => { try{ return getDatabase(app, u); }catch(e){ console.warn('elgoharyX: skipping bad DB url', u, e); return null; } }).filter(Boolean);
+if(!dbs.length) dbs = [getDatabase(app, DEFAULT_DB_URL)];   // never end up with zero databases
 const primaryDb = dbs[0];
+/* a read/write must never hang the app on a slow/unreachable backup */
+const withTimeout = (p, ms, fallback) => Promise.race([ p, new Promise(res => setTimeout(() => res(fallback), ms)) ]);
 
 /* active write DB index (persisted so overflow writes keep going to the backup) */
 let _activeWrite = 0;
@@ -145,7 +152,7 @@ export function child(r, path){ return fbChild(r, path); }
 export async function get(r){
   if(dbs.length === 1) return fbGet(r);                        // fast path — untouched single-DB behaviour
   const path = pathOf(r);
-  const snaps = await Promise.all(dbs.map(d => fbGet(fbRef(d, path)).catch(() => null)));
+  const snaps = await Promise.all(dbs.map(d => withTimeout(fbGet(fbRef(d, path)).catch(() => null), 7000, null)));
   const vals = snaps.map(s => (s && s.exists()) ? s.val() : null);
   const merged = mergeValues(vals);
   const key = path ? path.split('/').filter(Boolean).pop() || null : null;
@@ -159,27 +166,36 @@ const isConfigPath = p => p === 'config' || p.indexOf('config/') === 0;
 export async function set(r, value){
   if(dbs.length === 1) return fbSet(r, value);
   const path = pathOf(r);
-  if(isConfigPath(path)){ await Promise.all(dbs.map(d => fbSet(fbRef(d, path), value))); return; }
+  if(isConfigPath(path)) return mirrorConfig(d => fbSet(fbRef(d, path), value));
   return writeActive(i => fbSet(fbRef(dbs[i], path), value));
 }
 export async function update(r, values){
   if(dbs.length === 1) return fbUpdate(r, values);
   const path = pathOf(r);
-  if(isConfigPath(path)){ await Promise.all(dbs.map(d => fbUpdate(fbRef(d, path), values))); return; }
+  if(isConfigPath(path)) return mirrorConfig(d => fbUpdate(fbRef(d, path), values));
   return writeActive(i => fbUpdate(fbRef(dbs[i], path), values));
 }
 export async function remove(r){
   if(dbs.length === 1) return fbRemove(r);
   const path = pathOf(r);
-  await Promise.all(dbs.map(d => fbRemove(fbRef(d, path)).catch(() => {})));   // a record may be in any DB
+  await Promise.all(dbs.map(d => withTimeout(fbRemove(fbRef(d, path)).catch(() => {}), 8000, null)));   // a record may be in any DB
+}
+/* config writes: the PRIMARY must succeed (rules everywhere read config/adminEmail),
+   backups are mirrored best-effort in the background so a slow backup never blocks. */
+async function mirrorConfig(op){
+  const p = op(primaryDb);                                   // authoritative — surfaces permission errors
+  dbs.slice(1).forEach(d => { try{ op(d).catch(() => {}); }catch(e){} });
+  return p;
 }
 /* try the active DB, advancing to the next on a non-permission failure (over quota
-   / unavailable → the DB is full or down, so overflow to the next). */
+   / unavailable / timeout → the DB is full or down, so overflow to the next). */
 async function writeActive(op){
   for(let n = 0; n < dbs.length; n++){
     const i = (_activeWrite + n) % dbs.length;
-    try{ await op(i); if(i !== _activeWrite) persistActive(i); return; }
-    catch(e){
+    try{
+      await Promise.race([ op(i), new Promise((_, rej) => setTimeout(() => rej(new Error('write-timeout')), 9000)) ]);
+      if(i !== _activeWrite) persistActive(i); return;
+    }catch(e){
       const msg = String((e && (e.code || e.message)) || '');
       if(/permission|denied/i.test(msg) || n === dbs.length - 1) throw e;   // rule error → don't shop around
     }
@@ -190,8 +206,9 @@ export const db = primaryDb;
 export const auth = getAuth(app);
 
 /* refresh the backup-URL list from the primary DB for the NEXT load (so a backup
-   the admin adds on one device propagates to others). */
-try{ fbGet(fbRef(primaryDb, 'config/dbUrls')).then(s => {
+   the admin adds on one device propagates to others). Skipped during ?dbreset=1 so
+   a bad backup in config doesn't immediately re-cache itself. */
+try{ if(!DBRESET) fbGet(fbRef(primaryDb, 'config/dbUrls')).then(s => {
   if(s.exists()){ const a = (Array.isArray(s.val()) ? s.val() : Object.values(s.val() || {})).map(x=>String(x||'').trim()).filter(Boolean);
     try{ localStorage.setItem('apb_db_urls', JSON.stringify(a)); }catch(e){} }
 }).catch(() => {}); }catch(e){}

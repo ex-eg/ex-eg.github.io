@@ -3227,11 +3227,11 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     $('#app').innerHTML = appbar('admin') + `<div class="wrap">${skelGrid(3)}</div>` + drawer('admin');
     wireAppbar();
     const fbAuthed = !!(auth && auth.currentUser);
-    const adminGateObj = await loadAdminGate();   // panel password (hides the admin email)
+    // load everything the panel needs in parallel (each already falls back safely on error)
+    const [adminGateObj, imgKeys, captchaList, emailBackups] = await Promise.all([
+      loadAdminGate(), loadImageKeys(), loadCaptchaKeys(), loadEmailBackups()
+    ]);
     const adminGateSet = !!adminGateObj;
-    const imgKeys = await loadImageKeys();         // configured imgbb upload keys (for the Settings tab)
-    const captchaList = await loadCaptchaKeys();   // reCAPTCHA (App Check) site keys
-    const emailBackups = await loadEmailBackups(); // backup EmailJS credential sets
     const dbInfo = dbState();                      // primary + backup DB URLs and active write index
     // "set admin email" + "panel password" cards
     const setupCard = () => `<div class="panel" style="max-width:600px;margin:0 auto 18px;padding:20px">
@@ -3951,8 +3951,14 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
      visitor to it sees a maintenance page — except the admin, who always passes. */
   let maintCfg=null;
   async function loadMaintenance(){
-    try{ const s=await get(child(ref(db),'config/maintenance')); maintCfg = s.exists()? (s.val()||{}) : {}; }
-    catch(e){ maintCfg = {}; }
+    // fail-open with a timeout: never let a slow/failed read block the whole page render
+    try{
+      const s=await Promise.race([
+        get(child(ref(db),'config/maintenance')),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('maint-timeout')), 4000))
+      ]);
+      maintCfg = s.exists()? (s.val()||{}) : {};
+    }catch(e){ maintCfg = {}; }
     return maintCfg;
   }
   const MAINT_SECTION = {
