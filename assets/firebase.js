@@ -15,7 +15,7 @@
    every helper takes a fast path that calls the raw Firebase SDK directly — i.e.
    behaviour is byte-for-byte identical to a plain single-database setup. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check.js";
+/* App Check + reCAPTCHA removed 2026-07-08 — see note below the config. */
 import {
   getDatabase,
   ref as fbRef, child as fbChild, get as fbGet, set as fbSet,
@@ -52,23 +52,20 @@ export function captchaKeys(){
   return DEFAULT_CAPTCHA_KEYS.slice();
 }
 
-/* App Check — attests that requests come from the real elgoharyX site.
-   IMPORTANT: App Check ALWAYS uses the hardcoded DEFAULT_CAPTCHA_KEYS[0] — NOT the
-   localStorage/DB-overridable captchaKeys(). A stale key cached in localStorage or
-   config/captchaKeys would otherwise be sent to App Check, mismatch the key
-   registered in the Firebase console, and get every request (incl. login) rejected
-   with 401. Tying it to the deployed code key makes it deterministic: the key you
-   register in App Check === the key in this file. To rotate, change the const above
-   and re-register the matching key/secret in the Firebase App Check console. */
-try {
-  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  }
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(DEFAULT_CAPTCHA_KEYS[0]),
-    isTokenAutoRefreshEnabled: true
-  });
-} catch (e) { console.warn('App Check init skipped:', e); }
+/* App Check + reCAPTCHA REMOVED 2026-07-08.
+   The hardcoded reCAPTCHA v3 site key was NOT owned in this project's reCAPTCHA
+   account, so Firebase App Check could never verify its token — the exchange kept
+   failing with 400 "Invalid reCAPTCHA configuration". App Check enforcement is OFF,
+   so it gave ZERO protection while adding ~3s of latency to the first DB read (the
+   SDK waited on the failing token exchange) and spamming 400/503 errors. It is no
+   longer initialized and the firebase-app-check SDK is no longer imported, so
+   reCAPTCHA never loads. Enforcement MUST stay OFF unless App Check is re-added.
+   TO RE-ENABLE bot protection later: create a reCAPTCHA v3 key you OWN for this
+   domain, re-import { initializeAppCheck, ReCaptchaV3Provider } from the app-check
+   SDK, initialize it with that site key, register the same key + its SECRET in the
+   Firebase App Check console, confirm the exchange returns 200, THEN turn on
+   enforcement. (captchaKeys()/DEFAULT_CAPTCHA_KEYS are kept only because the admin
+   Settings panel still reads/writes config/captchaKeys — harmless, unused here.) */
 
 /* ---------- database URL list (primary + admin-added backups) ----------
    The primary URL is the hardcoded default and is always first. Backups come from
@@ -170,9 +167,21 @@ function mergeValues(vals){
 export function ref(_db, path){ return path === undefined ? fbRef(primaryDb) : fbRef(primaryDb, path); }
 export function child(r, path){ return fbChild(r, path); }
 
+/* a read must NEVER hang the UI forever. On the single-DB fast path a stalled
+   connection (slow/failing App Check token exchange, flaky network) could leave
+   fbGet() pending indefinitely and the page stuck on its loader/skeleton. Cap it
+   and fall back to an empty snapshot so callers render an empty state instead of
+   an endless spinner. Generous (12s) so only a genuine hang trips it. */
+const GET_MS = 12000;
 export async function get(r){
   const live = (dbs.length === 1) ? [0] : liveIdx();
-  if(live.length === 1) return fbGet(r);                       // fast path — real snapshot, single-DB speed
+  if(live.length === 1){                                       // fast path — real snapshot, single-DB speed
+    const key = (p => p ? p.split('/').filter(Boolean).pop() || null : null)(pathOf(r));
+    return Promise.race([
+      fbGet(r),
+      new Promise(res => setTimeout(() => res(makeSnap(null, key)), GET_MS))
+    ]);
+  }
   const path = pathOf(r);
   const snaps = await Promise.all(live.map(i => readTimed(i, path)));
   const vals = snaps.map(s => (s && s.exists()) ? s.val() : null);
