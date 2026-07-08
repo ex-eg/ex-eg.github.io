@@ -3,13 +3,8 @@
    then refreshes the cache in the background. This prevents the long "hang" that
    network-first caused when the network stalled. Firebase / cross-origin traffic
    is never intercepted, so live data always comes fresh from the database. */
-const CACHE = 'elgoharyx-v47';
-const CORE = ['./', './index.html', './assets/styles.css', './assets/app.js', './assets/firebase.js', './assets/core.js', './assets/imagehost.js', './assets/site.js', './assets/fx.js', './assets/pwa.js', './assets/ads.js', './assets/promo.js', './assets/i18n.js',
-  // every app-shell page that boots app.js — precached so the page HTML and the
-  // JS bundle are always the SAME version (a mixed set left the loader hanging).
-  './explore.html', './hub.html', './admin.html', './account.html', './login.html',
-  './my-profiles.html', './my-blog.html', './premium.html',
-  './profile.html', './blog.html', './create-profile.html', './create-blog.html'];
+const CACHE = 'elgoharyx-v45';
+const CORE = ['./', './index.html', './assets/styles.css', './assets/app.js', './assets/firebase.js', './assets/core.js', './assets/imagehost.js', './assets/site.js', './assets/fx.js', './assets/pwa.js', './assets/ads.js', './assets/promo.js', './assets/i18n.js', './explore.html', './hub.html'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
