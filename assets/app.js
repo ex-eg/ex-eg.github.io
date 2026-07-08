@@ -19,7 +19,7 @@ import {
   shortId, uniqueShortId, uniqueUserId, shorten
 } from './core.js';
 import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, currentImageKeys } from './imagehost.js';
-import { logVisit, startPresence, captureReferral, recordReferralIfPending, referralCount } from './site.js';
+import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, startPresence, captureReferral, recordReferralIfPending, referralCount } from './site.js';
 
   const TEMPLATES = [
     {id:'royal',    name:t('الكلاسيكي','Classic')},
@@ -609,6 +609,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
           ${isAdmin()?`<a class="btn ghost" href="${pageUrl('admin.html')}" style="padding:9px 13px;font-size:13px${active==='admin'?';border-color:var(--gold);color:var(--txt)':''}">${t('الأدمن','Admin')}</a>`:''}
           <button class="btn ghost" data-act="logout" style="padding:9px 13px;font-size:13px">${t('خروج','Log out')}</button>
         </div>
+        ${streakChip()}
         <button class="btn ghost ab-bell" data-act="bell" title="${t('الإشعارات','Notifications')}" style="padding:9px 12px;position:relative">${BELL}<span class="bell-dot" id="bellDot" hidden></span></button>
         <a class="user-chip" href="${pageUrl('account.html')}" title="${t('الملف الشخصي','Profile')}">${userAvatar('avatar-sm')}<span class="uc-name">${esc(currentUser.username)}</span></a>
         <button class="ab-burger" data-act="menu" aria-label="${t('القائمة','Menu')}">${TAB.burger}</button>`
@@ -926,6 +927,70 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   };
 
   /* ---------- account / profile page (edit account + avatar) ---------- */
+  /* ---------- achievement badges ----------
+     Computed purely from data we already track — best streak, number of profiles,
+     total audience (sum of profileStats visits) and referrals — so no extra DB
+     writes are needed. Gives the user concrete goals to chase, which lifts return
+     visits. Shown on the account page. */
+  async function computeBadges(uid){
+    let bestStreak=cachedStreak(uid);
+    try{ const s=await get(child(ref(db),'streaks/'+uid)); if(s.exists()){ const v=s.val()||{}; bestStreak=Math.max(bestStreak, v.best||0, v.current||0); } }catch(e){}
+    let profileCount=0, totalVisits=0;
+    try{
+      const s=await get(child(ref(db),'userProfiles/'+uid));
+      if(s.exists()){
+        const ids=Object.keys(s.val()||{});
+        profileCount=ids.length;
+        const stats=await Promise.all(ids.map(id=>profileStats(id).catch(()=>({total:0}))));
+        totalVisits=stats.reduce((a,x)=>a+((x&&x.total)||0),0);
+      }
+    }catch(e){}
+    let refs=0; try{ refs=await referralCount(uid); }catch(e){}
+    return { bestStreak, profileCount, totalVisits, refs };
+  }
+  function badgeList(m){
+    const B=(icon,title,have,need)=>({icon,title,have:have||0,need,earned:(have||0)>=need,pct:Math.min(100,Math.round((have||0)/need*100))});
+    return [
+      B('🔥', t('٣ أيام متتالية','3-day streak'),   m.bestStreak, 3),
+      B('🔥', t('٧ أيام متتالية','7-day streak'),   m.bestStreak, 7),
+      B('⚡', t('٣٠ يوماً متتالياً','30-day streak'), m.bestStreak, 30),
+      B('🏆', t('١٠٠ يوم متتالٍ','100-day streak'),  m.bestStreak, 100),
+      B('📇', t('أول بروفايل','First profile'),      m.profileCount, 1),
+      B('📚', t('٣ بروفايلات','3 profiles'),         m.profileCount, 3),
+      B('👀', t('١٠٠ زيارة','100 visits'),           m.totalVisits, 100),
+      B('🌟', t('١٬٠٠٠ زيارة','1,000 visits'),       m.totalVisits, 1000),
+      B('🚀', t('٥٬٠٠٠ زيارة','5,000 visits'),       m.totalVisits, 5000),
+      B('🎁', t('أول دعوة','First invite'),          m.refs, 1),
+      B('🤝', t('١٠ دعوات','10 invites'),            m.refs, 10),
+    ];
+  }
+  function renderBadges(box){
+    if(!box) return;
+    box.innerHTML=`<div class="sub" style="padding:8px 0">${t('جارٍ حساب شاراتك…','Calculating your badges…')}</div>`;
+    computeBadges(currentUser.uid).then(m=>{
+      if(!$('#acctBadges')) return;
+      const list=badgeList(m);
+      const earned=list.filter(b=>b.earned).length;
+      box.innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div><h2 style="margin:0">${t('شاراتك','Your badges')}</h2>
+            <div class="sub">${t('أكمل التحديات لفتح شارات جديدة.','Complete challenges to unlock new badges.')}</div></div>
+          <span class="badge" style="font-weight:800">${earned} / ${list.length}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px">
+          ${list.map(b=>`
+            <div style="border:1px solid var(--line,rgba(0,0,0,.1));border-radius:14px;padding:12px 10px;text-align:center;background:${b.earned?'linear-gradient(135deg,rgba(255,138,0,.13),rgba(255,61,0,.13))':'var(--bg-2,rgba(0,0,0,.03))'};opacity:${b.earned?1:.7}">
+              <div style="font-size:30px;line-height:1;filter:${b.earned?'none':'grayscale(1)'}">${b.icon}</div>
+              <div style="font-size:12px;font-weight:700;margin:6px 0 5px">${esc(b.title)}</div>
+              ${b.earned
+                ? `<div style="font-size:11px;color:var(--gold,#c9a548);font-weight:800">✓ ${t('مفتوحة','Unlocked')}</div>`
+                : `<div style="height:5px;border-radius:5px;background:var(--line,rgba(0,0,0,.12));overflow:hidden"><div style="height:100%;width:${b.pct}%;background:linear-gradient(90deg,#ff8a00,#ff3d00)"></div></div>
+                   <div class="sub" style="font-size:10px;margin-top:3px">${Math.min(b.have,b.need)} / ${b.need}</div>`}
+            </div>`).join('')}
+        </div>`;
+    }).catch(()=>{ if(box) box.innerHTML=`<div class="sub">${t('تعذّر حساب الشارات.','Could not calculate badges.')}</div>`; });
+  }
+
   async function showAccount(){
     if(!currentUser){ gotoLogin(); return; }
     document.title=t('الملف الشخصي — elgoharyX','Profile — elgoharyX');
@@ -954,6 +1019,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         <div id="acctNotify"></div>
         <button class="btn primary" id="acctSave" style="width:100%">${t('حفظ التغييرات','Save changes')}</button>
       </div>
+      <div class="panel acct-card" style="margin-top:16px"><div id="acctBadges"></div></div>
     </div>` + drawer('account');
     wireAppbar();
     // premium status row (loaded async)
@@ -978,6 +1044,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       };
       draw();
     })();
+
+    // achievement badges
+    renderBadges($('#acctBadges'));
 
     const noteEl=$('#acctNote');
     const refresh=()=>{ $('#acctAvatar').innerHTML=avatarInner(); const r=$('#acctRemove'); if(r) r.style.display=photo?'':'none'; };
@@ -1041,6 +1110,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
               <button data-share="${p.id}">${IC2.share} ${t('مشاركة للتعديل','Share for editing')}</button>
               <button data-link="${p.id}">${IC2.link} ${t('الرابط','Link')}</button>
               <button data-qr="${p.id}" data-qrname="${esc(p.name||'')}">${IC2.qr} ${t('رمز QR','QR code')}</button>
+              <button data-stats="${p.id}" data-statsname="${esc(p.name||'')}">📊 ${t('التحليلات','Analytics')}</button>
               <button class="del" data-del="${p.id}">${t('حذف','Delete')}</button>
             </div>
           </div>
@@ -1049,6 +1119,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       $('#mpList').querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileView(b.dataset.link));toast(t('تم نسخ رابط العرض ✓','View link copied ✓'));});
       $('#mpList').querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileEdit(b.dataset.share));toast(t('تم نسخ رابط التعديل ✓ — شاركه لمن يعدّل البروفايل','Edit link copied ✓ — share it with your co-editor'));});
       $('#mpList').querySelectorAll('[data-qr]').forEach(b=>b.onclick=()=>openQR(urlProfileView(b.dataset.qr), b.dataset.qrname||t('بروفايل','Profile')));
+      $('#mpList').querySelectorAll('[data-stats]').forEach(b=>b.onclick=()=>openStats(b.dataset.stats, b.dataset.statsname||t('بروفايل','Profile')));
       $('#mpList').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
         if(!confirm(t('حذف هذا البروفايل نهائياً؟','Permanently delete this profile?'))) return;
         try{ await remove(ref(db,'profiles/'+b.dataset.del)); await remove(ref(db,'userProfiles/'+currentUser.uid+'/'+b.dataset.del)); toast(t('تم الحذف','Deleted')); showMyProfiles(); }
@@ -1107,6 +1178,69 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     };
   }
 
+  /* ---------- profile analytics (owner dashboard) ----------
+     A reason to come back daily: shows how many visits each profile earned —
+     total, the last 7 days as a mini bar chart, and the top countries. Reads the
+     aggregate counters written by logProfileVisit(); the creator's own views are
+     never counted, so the numbers reflect real audience. */
+  function closeStats(){ const o=$('#stOv'); if(o) o.remove(); }
+  async function openStats(id, label){
+    closeStats();
+    const safeLabel = label ? String(label).slice(0,60) : t('بروفايل','Profile');
+    const ov=document.createElement('div');
+    ov.id='stOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:18px';
+    ov.innerHTML=`<div class="qr-card" style="background:var(--panel,#fff);color:var(--txt,#111);max-width:460px;width:100%;border-radius:18px;padding:24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.45);position:relative;border:1px solid var(--line,rgba(0,0,0,.12))">
+      <button id="stClose" title="${t('إغلاق','Close')}" style="position:absolute;top:12px;inset-inline-end:12px;background:none;border:none;font-size:22px;cursor:pointer;color:inherit;line-height:1">✕</button>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;margin:2px 0 4px">📊 ${t('تحليلات البروفايل','Profile analytics')}</h3>
+      <p class="sub" style="margin-bottom:16px;word-break:break-word">${esc(safeLabel)}</p>
+      <div id="stBody"><div class="loader" style="min-height:120px"><div><div class="spin"></div></div></div></div>
+    </div>`;
+    document.body.appendChild(ov);
+    $('#stClose').onclick=closeStats;
+    ov.onclick=e=>{ if(e.target===ov) closeStats(); };
+    document.addEventListener('keydown',function esc0(e){ if(e.key==='Escape'){ closeStats(); document.removeEventListener('keydown',esc0); } });
+
+    const s = await profileStats(id);
+    const loc = curLang()==='en' ? 'en-GB' : 'ar-EG';
+    const pad=n=>(n<10?'0':'')+n;
+    const now=new Date(); const days=[];
+    for(let i=6;i>=0;i--){ const dd=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);
+      const key=dd.getFullYear()+'-'+pad(dd.getMonth()+1)+'-'+pad(dd.getDate());
+      days.push({ label: dd.toLocaleDateString(loc,{weekday:'short'}), n: s.daily[key]||0 }); }
+    const max=Math.max(1,...days.map(d=>d.n));
+    const week=days.reduce((a,d)=>a+d.n,0);
+    const bars=days.map(d=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="font-size:11px;font-weight:700">${d.n||''}</div>
+      <div style="width:100%;background:var(--line,rgba(0,0,0,.08));border-radius:6px;height:88px;display:flex;align-items:flex-end;overflow:hidden">
+        <div style="width:100%;height:${Math.round(d.n/max*100)}%;min-height:${d.n?4:0}px;background:var(--accent,#c9a548);border-radius:6px 6px 0 0"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted-2,#8a8a8a)">${esc(d.label)}</div>
+    </div>`).join('');
+    const cc=Object.entries(s.countries||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const flag=c=>/^[A-Z]{2}$/.test(c)?c.replace(/./g,ch=>String.fromCodePoint(127397+ch.charCodeAt(0))):'🌍';
+    const countryRows = cc.length ? cc.map(([c,n])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line,rgba(0,0,0,.06))"><span>${flag(c)} ${esc(c)}</span><b>${n}</b></div>`).join('')
+      : `<div class="sub" style="padding:8px 0;font-size:12px">${t('لا توجد بيانات بلدان بعد.','No country data yet.')}</div>`;
+
+    const body=$('#stBody'); if(!body) return;
+    body.innerHTML=`
+      <div style="display:flex;gap:12px;margin-bottom:18px">
+        <div style="flex:1;background:var(--bg-2,rgba(0,0,0,.04));border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:800">${s.total||0}</div>
+          <div class="sub" style="font-size:12px">${t('إجمالي الزيارات','Total visits')}</div>
+        </div>
+        <div style="flex:1;background:var(--bg-2,rgba(0,0,0,.04));border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:800">${week}</div>
+          <div class="sub" style="font-size:12px">${t('آخر ٧ أيام','Last 7 days')}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">${t('الزيارات اليومية','Daily visits')}</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:18px">${bars}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px">${t('أعلى الدول','Top countries')}</div>
+      ${countryRows}
+      <p class="sub" style="font-size:12px;margin-top:14px;opacity:.8">${t('تُحتسب زيارة واحدة لكل زائر في الجلسة، وزياراتك لبروفايلك لا تُحتسب.','One visit is counted per visitor per session; your own visits to your profile are not counted.')}</p>`;
+  }
+
   /* ---------- workspace hub: all profiles + the blog in one screen ----------
      The client lands here from the main screen to manage everything in one place:
      view / edit / copy-link / QR / delete every profile, plus the account's blog. */
@@ -1156,6 +1290,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
                 <button data-hedit="${p.id}">${IC2.pen} ${t('تعديل','Edit')}</button>
                 <button data-hlink="${p.id}">${IC2.link} ${t('الرابط','Link')}</button>
                 <button data-hqr="${p.id}" data-hqrname="${esc(p.name||'')}">${IC2.qr} ${t('رمز QR','QR code')}</button>
+                <button data-hstats="${p.id}" data-hstatsname="${esc(p.name||'')}">📊 ${t('التحليلات','Analytics')}</button>
                 <button class="del" data-hdel="${p.id}">${t('حذف','Delete')}</button>
               </div>
             </div>
@@ -1163,6 +1298,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         $('#hubProfiles').querySelectorAll('[data-hedit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.hedit));
         $('#hubProfiles').querySelectorAll('[data-hlink]').forEach(b=>b.onclick=()=>{navigator.clipboard?.writeText(urlProfileView(b.dataset.hlink));toast(t('تم نسخ رابط العرض ✓','View link copied ✓'));});
         $('#hubProfiles').querySelectorAll('[data-hqr]').forEach(b=>b.onclick=()=>openQR(urlProfileView(b.dataset.hqr), b.dataset.hqrname||t('بروفايل','Profile')));
+        $('#hubProfiles').querySelectorAll('[data-hstats]').forEach(b=>b.onclick=()=>openStats(b.dataset.hstats, b.dataset.hstatsname||t('بروفايل','Profile')));
         $('#hubProfiles').querySelectorAll('[data-hdel]').forEach(b=>b.onclick=async()=>{
           if(!confirm(t('حذف هذا البروفايل نهائياً؟','Permanently delete this profile?'))) return;
           try{ await remove(ref(db,'profiles/'+b.dataset.hdel)); await remove(ref(db,'userProfiles/'+currentUser.uid+'/'+b.dataset.hdel)); toast(t('تم الحذف','Deleted')); showHub(); }
@@ -1703,6 +1839,8 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       }
       const d = snap.val();
       const paintProfile=()=>{
+        // count one visit per session per profile — the creator's own views don't count
+        try{ if(!currentUser || currentUser.uid !== d.ownerUid) logProfileVisit(id); }catch(e){}
         seoFor(d);
         document.body.style.background = PAGE_BG[d.template]||'#0c1424';
         $('#app').innerHTML = `<div class="viewer">${renderCard(d)}<div class="elg-ad" data-ad="profile"></div></div>`;
@@ -4119,6 +4257,62 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     }catch(e){}
   }
 
+  /* ---------- daily streak (habit loop) ----------
+     A 🔥 chip in the app bar shows the user's consecutive-days count (instant,
+     from the local cache), and once per day the first visit pops a short
+     celebration so the user feels the reward and comes back to keep the streak. */
+  function streakChip(){
+    if(!currentUser) return '';
+    const n=cachedStreak(currentUser.uid);
+    return `<a href="${pageUrl('account.html')}" id="streakChip" class="streak-chip" title="${t('أيام متتالية على الموقع','Consecutive days on the site')}" style="display:${n>0?'inline-flex':'none'};align-items:center;gap:4px;font-weight:800;font-size:13px;padding:8px 12px;border-radius:999px;text-decoration:none;background:linear-gradient(135deg,#ff8a00,#ff3d00);color:#fff;box-shadow:0 2px 10px rgba(255,80,0,.35)">🔥<span id="streakNum">${n||''}</span></a>`;
+  }
+  function updateStreakChip(n){
+    const c=$('#streakChip'); if(!c) return;
+    const num=$('#streakNum'); if(num) num.textContent=n||'';
+    c.style.display = n>0 ? 'inline-flex' : 'none';
+  }
+  function closeStreak(){ const o=$('#streakOv'); if(o) o.remove(); }
+  function openStreak(info){
+    closeStreak();
+    const cur=info.current||1, best=info.best||cur;
+    const headline = info.reset
+      ? t('سلسلة جديدة تبدأ! 🔥','A new streak begins! 🔥')
+      : (cur>1 ? t('يومك رقم '+cur+' على التوالي! 🔥','Day '+cur+' in a row! 🔥') : t('بدأت سلسلتك! 🔥','Your streak has started! 🔥'));
+    const sub = cur>1
+      ? t('ارجع غداً للحفاظ على سلسلتك — لا تكسرها!','Come back tomorrow to keep your streak — don\'t break it!')
+      : t('ارجع كل يوم لتكبر سلسلتك وتفتح شارات جديدة.','Come back every day to grow your streak and unlock badges.');
+    const ov=document.createElement('div');
+    ov.id='streakOv';
+    ov.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:18px';
+    ov.innerHTML=`<div class="streak-card" style="background:var(--panel,#fff);color:var(--txt,#111);max-width:400px;width:100%;border-radius:20px;padding:26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.45);position:relative;border:1px solid var(--line,rgba(0,0,0,.1));text-align:center">
+      <button id="streakClose" title="${t('إغلاق','Close')}" style="position:absolute;top:12px;inset-inline-end:12px;background:none;border:none;font-size:22px;cursor:pointer;color:inherit;line-height:1">✕</button>
+      <div style="font-size:64px;line-height:1;margin:4px 0 2px">🔥</div>
+      <div style="font-size:46px;font-weight:900;background:linear-gradient(135deg,#ff8a00,#ff3d00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent">${cur}</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;margin:4px 0 6px">${headline}</h3>
+      <p class="sub" style="margin-bottom:16px">${sub}</p>
+      <div style="display:inline-flex;gap:18px;background:var(--bg-2,rgba(0,0,0,.04));border-radius:12px;padding:12px 20px;margin-bottom:16px">
+        <div><div style="font-size:20px;font-weight:800">${cur}</div><div class="sub" style="font-size:11px">${t('الحالية','Current')}</div></div>
+        <div style="width:1px;background:var(--line,rgba(0,0,0,.1))"></div>
+        <div><div style="font-size:20px;font-weight:800">${best}</div><div class="sub" style="font-size:11px">${t('الأطول','Best')}</div></div>
+      </div>
+      <button class="btn primary" id="streakOk" style="width:100%">${t('هيا نكمل! 💪','Let\'s keep going! 💪')}</button>
+    </div>`;
+    document.body.appendChild(ov);
+    $('#streakClose').onclick=closeStreak;
+    $('#streakOk').onclick=closeStreak;
+    ov.onclick=e=>{ if(e.target===ov) closeStreak(); };
+    document.addEventListener('keydown',function esc0(e){ if(e.key==='Escape'){ closeStreak(); document.removeEventListener('keydown',esc0); } });
+  }
+  async function maybeStreak(){
+    try{
+      if(!currentUser||!currentUser.uid) return;
+      const r=await bumpStreak(currentUser.uid);
+      if(!r) return;
+      updateStreakChip(r.current);
+      if(r.isNewDay) setTimeout(()=>{ try{ openStreak(r); }catch(e){} }, 900);
+    }catch(e){}
+  }
+
   /* ---------- maintenance mode (admin-controlled) ----------
      config/maintenance = { site:bool, explore:bool, profiles:bool, blogs:bool,
      premium:bool, msg:string }. When a section (or the whole site) is on, every
@@ -4198,7 +4392,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       const u=currentUser;
       logVisit();
       startPresence({ uid: u&&u.uid, name: u&&u.username, page: PAGE||'home' });
-      if(u&&u.uid){ recordReferralIfPending(u.uid); maybeReferralPopup(); }
+      if(u&&u.uid){ recordReferralIfPending(u.uid); maybeStreak(); maybeReferralPopup(); }
     }catch(e){}
   }
   function maybeReferralPopup(){
@@ -4207,7 +4401,8 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       if(localStorage.getItem('apb_ref_hide')==='1') return;
       if(sessionStorage.getItem('apb_ref_popup')==='1') return;
       sessionStorage.setItem('apb_ref_popup','1');
-      setTimeout(()=>{ try{ openReferral(true); }catch(e){} }, 1600);
+      // don't stack on top of the daily streak celebration if it's showing
+      setTimeout(()=>{ try{ if($('#streakOv')) return; openReferral(true); }catch(e){} }, 1600);
     }catch(e){}
   }
   (async function init(){

@@ -32,6 +32,75 @@ export async function logVisit(){
   }catch(e){ /* rules not published / offline */ }
 }
 
+/* count one visit per browser session PER PROFILE, so a creator sees how many
+   distinct visitors opened each profile — by day and by country. Stored as
+   aggregate counters under profileStats/<id>, mirroring the site-wide node. */
+export async function logProfileVisit(id){
+  if(!id) return;
+  const flag = 'apb_pv_' + id;
+  try{ if(sessionStorage.getItem(flag) === '1') return; }catch(e){}
+  try{ sessionStorage.setItem(flag, '1'); }catch(e){}
+  let cc = '';
+  try{ const g = JSON.parse(sessionStorage.getItem('apb_geo') || '{}'); cc = String(g.cc || '').slice(0, 2).toUpperCase(); }catch(e){}
+  try{
+    const upd = { total: increment(1) };
+    upd['daily/' + todayKey()] = increment(1);
+    if(cc && /^[A-Z]{2}$/.test(cc)) upd['countries/' + cc] = increment(1);
+    await update(ref(db, 'profileStats/' + id), upd);
+  }catch(e){ /* rules not published / offline */ }
+}
+
+/* read the aggregate visit stats for one profile (owner-facing dashboard). */
+export async function profileStats(id){
+  const empty = { total: 0, daily: {}, countries: {} };
+  if(!id) return empty;
+  try{
+    const s = await get(child(ref(db), 'profileStats/' + id));
+    if(!s.exists()) return empty;
+    const v = s.val() || {};
+    return { total: v.total || 0, daily: v.daily || {}, countries: v.countries || {} };
+  }catch(e){ return empty; }
+}
+
+/* ---------- daily streak (habit loop) ----------
+   Rewards a logged-in user for returning on consecutive days. Stored at
+   streaks/<uid> = { current, best, last:'YYYY-MM-DD', at }. Advances at most
+   once per calendar day. A localStorage guard skips the DB once the day is
+   already counted on this browser, so extra page views cost nothing. */
+function dayKey(delta){ const d = new Date(); d.setDate(d.getDate() + (delta || 0)); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+/* instant, offline read of the last known streak for UI (chip in the app bar). */
+export function cachedStreak(uid){
+  if(!uid) return 0;
+  try{ return parseInt(localStorage.getItem('apb_streak_n_' + uid) || '0', 10) || 0; }catch(e){ return 0; }
+}
+
+export async function bumpStreak(uid){
+  if(!uid) return null;
+  const today = dayKey(0);
+  const ymdKey = 'apb_streak_ymd_' + uid;
+  try{ if(localStorage.getItem(ymdKey) === today) return { current: cachedStreak(uid), best: cachedStreak(uid), isNewDay: false, reset: false }; }catch(e){}
+  let cur = 0, best = 0, last = '';
+  try{
+    const s = await get(child(ref(db), 'streaks/' + uid));
+    if(s.exists()){ const v = s.val() || {}; cur = v.current || 0; best = v.best || 0; last = v.last || ''; }
+  }catch(e){ /* offline / rules — fall through as a fresh start */ }
+  if(last === today){
+    try{ localStorage.setItem(ymdKey, today); localStorage.setItem('apb_streak_n_' + uid, String(cur)); }catch(e){}
+    return { current: cur, best: Math.max(best, cur), isNewDay: false, reset: false };
+  }
+  const reset = last !== dayKey(-1);
+  const current = reset ? 1 : cur + 1;
+  const newBest = Math.max(best, current);
+  try{
+    await set(ref(db, 'streaks/' + uid), { current, best: newBest, last: today, at: Date.now() });
+  }catch(e){
+    return null;   // write blocked (auth not ready / rules unpublished) — don't mark the day, retry next load
+  }
+  try{ localStorage.setItem(ymdKey, today); localStorage.setItem('apb_streak_n_' + uid, String(current)); }catch(e){}
+  return { current, best: newBest, isNewDay: true, reset: reset && cur > 0 };
+}
+
 /* ---------- presence (active-now) ---------- */
 let _presenceStarted = false;
 export function startPresence({ uid, name, page } = {}){
