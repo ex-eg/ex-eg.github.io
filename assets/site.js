@@ -121,6 +121,44 @@ export function startPresence({ uid, name, page } = {}){
   }catch(e){}
 }
 
+/* ---------- personal notifications (engagement loop) ----------
+   A per-user inbox at notifications/<uid>/<nid> that pulls creators back:
+   "someone viewed your profile", "new rating ⭐", "new comment 💬", "new follower".
+   Public-write + validated by the DB rules (most users have no Firebase auth token,
+   same trust model as the counters above). Best-effort: a blocked/failed write must
+   NEVER affect the action that triggered it. */
+export async function notify(toUid, data){
+  if(!toUid || !data || !data.type) return;
+  const nid = 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const payload = { type: String(data.type).slice(0, 20), text: String(data.text || '').slice(0, 200), at: Date.now(), seen: false };
+  if(data.link)  payload.link  = String(data.link).slice(0, 300);
+  if(data.actor) payload.actor = String(data.actor).slice(0, 60);
+  try{ await set(ref(db, 'notifications/' + toUid + '/' + nid), payload); }catch(e){ /* rules/offline — silent */ }
+}
+/* read a user's notification inbox, newest first (optionally capped). */
+export async function loadNotifications(uid, cap){
+  if(!uid) return [];
+  try{
+    const s = await get(child(ref(db), 'notifications/' + uid));
+    if(!s.exists()) return [];
+    const list = Object.entries(s.val() || {}).map(([id, v]) => ({ id, ...v }));
+    list.sort((a, b) => (b.at || 0) - (a.at || 0));
+    return cap ? list.slice(0, cap) : list;
+  }catch(e){ return []; }
+}
+/* trim an inbox to its newest `keep` items (called opportunistically so it never grows unbounded). */
+export async function trimNotifications(uid, keep){
+  if(!uid) return;
+  try{
+    const s = await get(child(ref(db), 'notifications/' + uid));
+    if(!s.exists()) return;
+    const all = Object.entries(s.val() || {}).map(([id, v]) => ({ id, at: v && v.at || 0 }));
+    if(all.length <= keep) return;
+    all.sort((a, b) => (b.at || 0) - (a.at || 0));
+    for(const o of all.slice(keep)){ try{ await set(ref(db, 'notifications/' + uid + '/' + o.id), null); }catch(e){} }
+  }catch(e){}
+}
+
 /* ---------- referrals ---------- */
 /* remember an incoming ?ref=<uid> link for later (when the visitor has an account). */
 export function captureReferral(){

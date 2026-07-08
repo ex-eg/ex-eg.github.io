@@ -19,7 +19,7 @@ import {
   shortId, uniqueShortId, uniqueUserId, shorten
 } from './core.js';
 import { uploadToImgbb, loadImageKeys, saveImageKeys, clearImageKeysCache, currentImageKeys } from './imagehost.js';
-import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, startPresence, captureReferral, recordReferralIfPending, referralCount } from './site.js';
+import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, startPresence, captureReferral, recordReferralIfPending, referralCount, notify, loadNotifications, trimNotifications } from './site.js';
 
   const TEMPLATES = [
     {id:'royal',    name:t('الكلاسيكي','Classic')},
@@ -1840,7 +1840,7 @@ import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, star
       const d = snap.val();
       const paintProfile=()=>{
         // count one visit per session per profile — the creator's own views don't count
-        try{ if(!currentUser || currentUser.uid !== d.ownerUid) logProfileVisit(id); }catch(e){}
+        try{ if(!currentUser || currentUser.uid !== d.ownerUid){ logProfileVisit(id); notifyProfileView(id, d); } }catch(e){}
         seoFor(d);
         document.body.style.background = PAGE_BG[d.template]||'#0c1424';
         $('#app').innerHTML = `<div class="viewer">${renderCard(d)}<div class="elg-ad" data-ad="profile"></div></div>`;
@@ -2339,6 +2339,7 @@ import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, star
       for(const k in votes){ const v=+votes[k]; if(v>=1&&v<=5){ sum+=v; count++; } }
       const idx=await get(child(ref(db),'blogIndex/'+id));
       if(idx.exists()) await update(ref(db,'blogIndex/'+id), { rSum:sum, rCount:count });
+      notifyBlogOwner(id, { type:'rating', text:t('⭐ مدونتك حصلت تقييم جديد','⭐ Your blog got a new rating')+' ('+val+'/5)', link:pageUrl('blog.html')+'?blog='+encodeURIComponent(id), actor: currentUser?currentUser.username:'' });
       toast(t('شكراً لتقييمك ✓','Thanks for your rating ✓'));
       const el=$('#blogRate'); if(el) renderRatingWidget(el, id, count?sum/count:0, count, val);
     }catch(e){ console.error(e); toast(t('تعذّر حفظ التقييم — تأكد من نشر قواعد قاعدة البيانات','Could not save rating — make sure the database rules are published')); }
@@ -2461,6 +2462,7 @@ import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, star
     try{
       const name=((currentUser&&currentUser.username)||t('مستخدم','User')).slice(0,60);
       await set(ref(db,'articleComments/'+id+'/'+idx+'/'+shortId(14)), { uid, name, text, at:Date.now() });
+      notifyBlogOwner(id, { type:'comment', text:t('💬 تعليق جديد على مدونتك','💬 New comment on your blog')+' — '+name, link:pageUrl('blog.html')+'?blog='+encodeURIComponent(id), actor:name });
       ta.value=''; toast(t('تم إضافة تعليقك ✓','Your comment was added ✓')); loadComments(id,idx,d);
     }catch(e){ console.error(e); toast(t('تعذّر إضافة التعليق — تأكد من نشر قواعد قاعدة البيانات','Could not add comment — make sure the database rules are published')); }
     finally{ if(btn){ btn.disabled=false; btn.textContent=t('أضف تعليق','Add Comment'); } }
@@ -3295,20 +3297,54 @@ import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, star
     try{ localStorage.removeItem(NOTIF_OPTIN_KEY); }catch{}
   }
 
+  /* ---------- personal engagement notifications ----------
+     Merge the admin broadcast announcements with the user's OWN inbox
+     (notifications/<uid>) into one bell list. Every write is best-effort and never
+     blocks the action that triggers it (see notify() in site.js). This is the
+     "trigger" of the habit loop: someone viewed your profile / rated / commented. */
+  function notifItems(anns, mine){
+    const a = (anns||[]).map(x=>({ title:x.title||t('إشعار','Notification'), body:x.body||'', ts:x.createdAt||0, link:'' }));
+    const m = (mine||[]).map(x=>({ title:x.text||t('إشعار','Notification'), body:'', ts:x.at||0, link:x.link||'' }));
+    return a.concat(m).sort((p,q)=>(q.ts||0)-(p.ts||0));
+  }
+  /* notify a content owner at most once per browser session per item (no view spam) */
+  function notifyOnce(guardKey, toUid, data){
+    if(!toUid || (currentUser && currentUser.uid===toUid)) return;   // never notify yourself
+    try{ if(sessionStorage.getItem(guardKey)==='1') return; sessionStorage.setItem(guardKey,'1'); }catch(e){}
+    try{ notify(toUid, data); }catch(e){}
+  }
+  function notifyProfileView(id, d){
+    notifyOnce('apb_notv_'+id, d.ownerUid, {
+      type:'view',
+      text: t('👀 شخص شاهد بروفايلك','👀 Someone viewed your profile') + (d.name?(' «'+String(d.name).slice(0,40)+'»'):''),
+      link: pageUrl('profile.html')+'?id='+encodeURIComponent(id),
+      actor: currentUser?currentUser.username:''
+    });
+  }
+  async function notifyBlogOwner(id, data){
+    if(!id) return;
+    try{
+      const s=await get(child(ref(db),'blogs/'+id+'/ownerUid'));
+      const owner=s.exists()?s.val():'';
+      if(owner && (!currentUser || currentUser.uid!==owner)) notify(owner, data);
+    }catch(e){}
+  }
+
   /* update the bell badge, and (once per load) pop native OS notifications */
   let _notifPopped=false;
   async function refreshBell(){
     if(!currentUser) return;
-    const list=await loadAnnouncements();
+    const [anns, mine] = await Promise.all([ loadAnnouncements(), loadNotifications(currentUser.uid, 40) ]);
+    const items=notifItems(anns, mine);
     const seen=notifSeen();
-    const fresh=list.filter(a=>(a.createdAt||0)>seen);
+    const fresh=items.filter(a=>(a.ts||0)>seen);
     const dot=$('#bellDot');
     if(dot){ if(fresh.length){ dot.hidden=false; dot.textContent=fresh.length>9?'9+':String(fresh.length); } else { dot.hidden=true; dot.textContent=''; } }
     if(!_notifPopped){
       _notifPopped=true;
       if('Notification' in window && Notification.permission==='granted' && isSubscribed()){
-        fresh.slice(0,3).forEach(a=>{ try{ new Notification(a.title||t('إشعار جديد — elgoharyX','New notification — elgoharyX'),
-          { body:(a.body||'').slice(0,180), icon:LOGO, tag:'elgo-'+a.id }); }catch(e){} });
+        fresh.slice(0,3).forEach((a,i)=>{ try{ new Notification(a.title||t('إشعار جديد — elgoharyX','New notification — elgoharyX'),
+          { body:(a.body||'').slice(0,180), icon:LOGO, tag:'elgo-'+(a.ts||i) }); }catch(e){} });
       }
     }
   }
@@ -3336,15 +3372,18 @@ import { logVisit, logProfileVisit, profileStats, bumpStreak, cachedStreak, star
       const u=$('#notifUnsub'); if(u) u.onclick=async()=>{ await unsubscribeNotifications(); toast(t('تم إلغاء الاشتراك','Unsubscribed')); drawSub(); };
     };
     drawSub();
-    const list=await loadAnnouncements();
-    setNotifSeen(list.length?Math.max(...list.map(a=>a.createdAt||0)):Date.now());
+    const [anns, mine] = await Promise.all([ loadAnnouncements(), loadNotifications(currentUser?currentUser.uid:null, 60) ]);
+    const items=notifItems(anns, mine);
+    setNotifSeen(items.length?Math.max(...items.map(a=>a.ts||0)):Date.now());
     const dot=$('#bellDot'); if(dot){ dot.hidden=true; dot.textContent=''; }
+    if(currentUser){ try{ trimNotifications(currentUser.uid, 60); }catch(e){} }   // keep the inbox bounded (owner-side)
     const el=$('#notifList'); if(!el) return;
-    el.innerHTML = list.length ? list.map(a=>`<div class="notif-item">
-        <div class="notif-t">${esc(a.title||t('إشعار','Notification'))}</div>
+    el.innerHTML = items.length ? items.map(a=>`<div class="notif-item"${a.link?` data-nlink="${esc(a.link)}" style="cursor:pointer"`:''}>
+        <div class="notif-t">${esc(a.title)}</div>
         ${a.body?`<div class="notif-b">${esc(a.body)}</div>`:''}
-        <div class="notif-d">${fmtDay(a.createdAt)}</div>
+        <div class="notif-d">${a.ts?fmtDay(a.ts):''}</div>
       </div>`).join('') : `<div class="pm-note" style="text-align:center;padding:22px 0">${t('لا توجد إشعارات بعد.','No notifications yet.')}</div>`;
+    el.querySelectorAll('[data-nlink]').forEach(it=>it.onclick=()=>{ const l=it.getAttribute('data-nlink'); if(l) location.href=l; });
   }
 
   /* send a single notification email to a user via EmailJS (fire-and-forget).
