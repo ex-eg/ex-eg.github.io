@@ -348,6 +348,23 @@
         "at":      { ".validate": "!newData.exists() || newData.isNumber()" },
         "$other":  { ".validate": false }
       }
+    },
+
+    "notifications": {
+      "$uid": {
+        ".read": true,
+        "$nid": {
+          ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists())",
+          ".validate": "newData.hasChildren(['type','at'])",
+          "type":  { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "text":  { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 200)" },
+          "link":  { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 300)" },
+          "actor": { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 60)" },
+          "at":    { ".validate": "newData.isNumber()" },
+          "seen":  { ".validate": "!newData.exists() || newData.isBoolean()" },
+          "$other": { ".validate": false }
+        }
+      }
     }
   }
 }
