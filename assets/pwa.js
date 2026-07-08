@@ -23,59 +23,6 @@
     });
   }
 
-  /* ---------- boot watchdog (self-heals a stale / half-updated cache) ----------
-     Every app page paints an initial ".pro-loader" that app.js (an ES module)
-     replaces the instant it boots. If the cache serves a NEW app.js against an
-     OLD module dependency — or vice-versa — the module graph fails to load,
-     app.js never runs, and the loader spins forever: the "التحميل معلق" hang.
-     This is a classic risk here because most app-shell pages (admin.html,
-     account.html, …) are not in the SW precache list, so their HTML and JS can
-     drift a version apart during an update.
-     If the loader is STILL on screen long past a normal boot (~1s), purge the
-     caches + service worker and reload ONCE to pull a clean, self-consistent
-     set; if it is still stuck after that, show a Try-again card instead of an
-     endless spinner. This lives in pwa.js (a classic script, not a module) on
-     purpose, so it keeps working even when the app.js module fails to load. */
-  (function bootWatchdog () {
-    var HEAL_KEY = 'apb_boot_heal';
-    function stillStuck () {
-      var app = document.getElementById('app');
-      return !!(app && app.querySelector('.pro-loader'));
-    }
-    function purgeAndReload () {
-      var reload = function () { try { location.reload(); } catch (e) { location.href = location.href; } };
-      var jobs = [];
-      try { if (window.caches && caches.keys) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) {}
-      try { if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) {}
-      Promise.all(jobs).catch(function () {}).then(reload);
-    }
-    function showRetry () {
-      var app = document.getElementById('app'); if (!app) return;
-      app.innerHTML =
-        '<div style="max-width:520px;margin:64px auto;padding:26px;text-align:center;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#eef2fb">' +
-          '<div style="font-size:44px;line-height:1">&#9888;&#65039;</div>' +
-          '<h2 style="margin:12px 0 6px;font-size:20px">' + L('تعذّر تحميل الصفحة', 'Couldn’t load the page') + '</h2>' +
-          '<p style="opacity:.8;margin-bottom:16px">' + L('حدث خطأ أثناء التحميل. جرّب إعادة المحاولة.', 'Something went wrong while loading. Please try again.') + '</p>' +
-          '<button id="bootRetry" style="padding:11px 22px;border-radius:10px;border:1px solid #e6c980;background:#e6c980;color:#0c1424;font-weight:700;cursor:pointer">' + L('إعادة المحاولة', 'Try again') + '</button>' +
-        '</div>';
-      var b = document.getElementById('bootRetry');
-      if (b) b.addEventListener('click', function () { try { sessionStorage.removeItem(HEAL_KEY); } catch (e) {} purgeAndReload(); });
-    }
-    window.addEventListener('load', function () {
-      setTimeout(function () {
-        if (!stillStuck()) { try { sessionStorage.removeItem(HEAL_KEY); } catch (e) {} return; } // booted fine
-        var healed = false;
-        try { healed = sessionStorage.getItem(HEAL_KEY) === '1'; } catch (e) {}
-        if (!healed) {
-          try { sessionStorage.setItem(HEAL_KEY, '1'); } catch (e) {}
-          purgeAndReload();          // first stuck load → self-heal once
-        } else {
-          showRetry();               // already healed and still stuck → stop the infinite spinner
-        }
-      }, 15000);
-    });
-  })();
-
   var isStandalone =
     window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true;
