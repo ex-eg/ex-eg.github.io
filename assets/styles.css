@@ -2415,3 +2415,26 @@
     .adm-head h2{ font-size:24px; }
     .adm-head-user{ display:none; }
   }
+
+/* =====================================================================
+   PREMIUM POLISH LAYER — safe, non-conflicting global finish.
+   Only touches properties the site does not heavily style, so it can
+   never break existing layout/design. Elevates the whole site's feel.
+   ===================================================================== */
+/* accessible on-brand keyboard focus ring */
+a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--accent-2,#7aa0ea) 82%,transparent);outline-offset:2px;border-radius:8px}
+/* branded text selection */
+::selection{background:color-mix(in srgb,var(--gold,#d0aa4e) 32%,transparent);color:#fff}
+/* slim, refined scrollbars */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--txt,#fff) 22%,transparent) transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--txt,#fff) 18%,transparent);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--gold,#d0aa4e) 45%,transparent);background-clip:padding-box}
+*::-webkit-scrollbar-track{background:transparent}
+/* crisp button press feedback */
+.btn:active{transform:translateY(1px) scale(.99)}
+/* smooth in-page scrolling */
+html{scroll-behavior:smooth}
+/* comfortable mobile tap targets */
+@media(max-width:600px){ .btn,.lang-toggle,.home-burger{min-height:42px} }
