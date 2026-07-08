@@ -2438,3 +2438,30 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 html{scroll-behavior:smooth}
 /* comfortable mobile tap targets */
 @media(max-width:600px){ .btn,.lang-toggle,.home-burger{min-height:42px} }
+
+/* ===== avatar frames + activity-level badge (visible to all visitors) ===== */
+.pf-avatar{position:relative}
+.pf-lvl{position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);background:linear-gradient(120deg,#e7c877,#d0aa4e);color:#1c1503;font-size:10px;font-weight:800;padding:2px 9px;border-radius:99px;white-space:nowrap;box-shadow:0 3px 9px rgba(0,0,0,.4);z-index:3;letter-spacing:.3px}
+.pf-fr-gold{box-shadow:0 0 0 3px #d0aa4e,0 0 0 6px rgba(208,170,78,.25)}
+.pf-fr-grad{box-shadow:0 0 0 3px #7aa0ea,0 0 0 6px #d0aa4e}
+.pf-fr-glow{box-shadow:0 0 0 3px #d0aa4e,0 0 22px 5px rgba(208,170,78,.5)}
+.pf-fr-double{box-shadow:0 0 0 2px #fff,0 0 0 5px #d0aa4e}
+.pf-fr-neon{box-shadow:0 0 0 2px #7de3ff,0 0 20px 4px rgba(125,227,255,.6)}
+.pf-fr-dashed{outline:3px dashed #d0aa4e;outline-offset:4px}
+/* frame picker in the editor */
+.frames-row{display:flex;gap:14px;flex-wrap:wrap}
+.frm{cursor:pointer;text-align:center;transition:transform .15s;opacity:.85}
+.frm.active{opacity:1;transform:scale(1.04)}
+.frm.active .frm-n{color:var(--gold-2)}
+.frm.locked{opacity:.5}
+.frm-prev{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#16233f;color:#cdd9ef;font-weight:800;margin:2px auto 8px;font-size:15px}
+.frm-n{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;justify-content:center}
+
+/* ===== blog frames (inset border around the page) + preview ===== */
+.blog-fr-gold{box-shadow:inset 0 0 0 4px #d0aa4e}
+.blog-fr-grad{box-shadow:inset 0 0 0 4px #7aa0ea,inset 0 0 0 8px #d0aa4e}
+.blog-fr-glow{box-shadow:inset 0 0 0 4px #d0aa4e,inset 0 0 55px rgba(208,170,78,.26)}
+.blog-fr-double{box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 7px #d0aa4e}
+.blog-fr-neon{box-shadow:inset 0 0 0 3px #7de3ff,inset 0 0 55px rgba(125,227,255,.3)}
+.blog-fr-dashed{outline:4px dashed #d0aa4e;outline-offset:-10px}
+.blog-frprev{width:52px!important;height:36px!important;border-radius:8px!important;background:#16233f;margin:2px auto 8px;overflow:hidden}

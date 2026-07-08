@@ -151,7 +151,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   const imgStyle=d=>`object-position:${posSafe(d.photoPos)};transform:scale(${zoomSafe(d.photoZoom)})`;
   function pfAvatar(d){
     const photo = d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.name)}" style="${imgStyle(d)}" onerror="this.remove()"/>` : esc(initials(d.name));
-    return `<div class="pf-avatar">${photo}</div>`;
+    const fr = (d.frame && /^[a-z0-9]{1,16}$/i.test(d.frame) && d.frame!=='none') ? ' pf-fr pf-fr-'+d.frame : '';
+    const lvl = (d.elgLevel && +d.elgLevel>1) ? `<span class="pf-lvl" title="${t('مستوى النشاط','Activity level')}">${t('مستوى','Lv')} ${parseInt(d.elgLevel,10)}</span>` : '';
+    return `<div class="pf-avatar${fr}">${photo}${lvl}</div>`;
   }
   function pfWho(d){
     const nameEn = d.nameEn?`<span class="en">${esc(d.nameEn)}</span>`:'';
@@ -430,8 +432,17 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   /* ======================================================================
      BUILDER
      ====================================================================== */
+  const FRAMES = [
+    {id:'none',   name:t('بلا إطار','No frame'), pro:false},
+    {id:'gold',   name:t('ذهبي','Gold'),         pro:false},
+    {id:'grad',   name:t('متدرّج','Gradient'),    pro:false},
+    {id:'glow',   name:t('توهّج','Glow'),         pro:true},
+    {id:'double', name:t('مزدوج','Double'),       pro:true},
+    {id:'neon',   name:t('نيون','Neon'),          pro:true},
+    {id:'dashed', name:t('منقّط','Dashed'),        pro:true}
+  ];
   const DEFAULTS = {
-    template:'royal', layout:'classic',
+    template:'royal', layout:'classic', frame:'none',
     kicker:t('أستاذ دكتور · Professor','Professor'),
     name:'Prof. Dr. Mona El-Fiky', nameEn:'',
     role:t('أستاذ بقسم هندسة الحاسبات والذكاء الاصطناعي — كلية الهندسة، جامعة القاهرة.','Professor of Computer Engineering and Artificial Intelligence — Faculty of Engineering, Cairo University.'),
@@ -1270,22 +1281,31 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         <details class="acc">
           <summary><span class="sum-t">${UICON.grid} ${t('التخطيط / الشكل','Layout / Style')} <span style="color:var(--muted-2);font-weight:400">(${LAYOUTS.length})</span></span></summary>
           <div class="acc-body">
-            ${isPremium()?'':gateNote(t('أول '+FREE_PROFILE_LAYOUTS+' تخطيطاً مجانية — والباقي للمشتركين المميزين.','The first '+FREE_PROFILE_LAYOUTS+' layouts are free — the rest are for Premium members.'))}
+            ${canDesign()?'':gateNote(t('أول '+FREE_PROFILE_LAYOUTS+' تخطيطاً مجانية — والباقي للمشتركين المميزين.','The first '+FREE_PROFILE_LAYOUTS+' layouts are free — the rest are for Premium members.'))}
             <input id="laySearch" class="lay-search" placeholder="${t('ابحث عن تخطيط…','Search for a layout…')}"/>
             <div class="layouts" id="lays">
-              ${LAYOUTS.map((l,li)=>{ const lk=li>=FREE_PROFILE_LAYOUTS; return `<div class="lay ${l.id===state.layout?'active':''} ${lk?'locked':''}" data-lay="${l.id}" data-name="${esc(l.name)}" ${lk?'data-locked="1"':''}>
+              ${LAYOUTS.map((l,li)=>{ const lk=li>=FREE_PROFILE_LAYOUTS && !canDesign(); return `<div class="lay ${l.id===state.layout?'active':''} ${lk?'locked':''}" data-lay="${l.id}" data-name="${esc(l.name)}" ${lk?'data-locked="1"':''}>
                 ${lk?'<span class="lay-lock">'+LOCKICON+'</span>':''}${l.icon}<div class="ln">${esc(l.name)}</div>${l.desc?`<div class="ld">${esc(l.desc)}</div>`:''}</div>`; }).join('')}
             </div>
           </div>
         </details>
 
         <details class="acc">
-          <summary><span class="sum-t">${UICON.palette} ${t('لون التصميم','Design color')} <span style="color:var(--muted-2);font-weight:400">(${TEMPLATES.length})</span> ${isPremium()?'':'<span class="lock-chip">'+LOCKICON+' '+t('مميز','Premium')+'</span>'}</span></summary>
+          <summary><span class="sum-t">${UICON.palette} ${t('لون التصميم','Design color')} <span style="color:var(--muted-2);font-weight:400">(${TEMPLATES.length})</span> ${canDesign()?'':'<span class="lock-chip">'+LOCKICON+' '+t('مميز','Premium')+'</span>'}</span></summary>
           <div class="acc-body">
-            ${isPremium()?'':gateNote(t('أول '+FREE_PROFILE_COLORS+' لوناً مجانية — وباقي الألوان للمشتركين المميزين.','The first '+FREE_PROFILE_COLORS+' colors are free — the rest are for Premium members.'))}
+            ${canDesign()?'':gateNote(t('أول '+FREE_PROFILE_COLORS+' لوناً مجانية — وباقي الألوان للمشتركين المميزين.','The first '+FREE_PROFILE_COLORS+' colors are free — the rest are for Premium members.'))}
             <div class="templates" id="tpls">
-              ${TEMPLATES.map((t,ti)=>{ const lk=ti>=FREE_PROFILE_COLORS; return `<div class="tpl t-${t.id} ${t.id===state.template?'active':''} ${lk?'locked':''}" data-tpl="${t.id}" ${lk?'data-locked="1"':''}>
+              ${TEMPLATES.map((t,ti)=>{ const lk=ti>=FREE_PROFILE_COLORS && !canDesign(); return `<div class="tpl t-${t.id} ${t.id===state.template?'active':''} ${lk?'locked':''}" data-tpl="${t.id}" ${lk?'data-locked="1"':''}>
                 <div class="swatch">${lk?'<span class="tpl-lock">'+LOCKICON+'</span>':''}</div><div class="nm">${t.name}</div></div>`; }).join('')}
+            </div>
+          </div>
+        </details>
+
+        <details class="acc">
+          <summary><span class="sum-t">${UICON.person} ${t('إطار الصورة','Avatar frame')} <span style="color:var(--muted-2);font-weight:400">(${FRAMES.length})</span></span></summary>
+          <div class="acc-body">
+            <div class="frames-row" id="framesRow">
+              ${FRAMES.map(f=>{ const lk=f.pro && !canDesign(); return `<div class="frm ${f.id===state.frame?'active':''} ${lk?'locked':''}" data-frm="${f.id}" ${lk?'data-locked="1"':''}><div class="frm-prev pf-fr-${f.id}"><span>${esc(initials(state.name||'A'))}</span></div><div class="frm-n">${esc(f.name)}${lk?' '+LOCKICON:''}</div></div>`; }).join('')}
             </div>
           </div>
         </details>
@@ -1577,7 +1597,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     // layout picker (locked layouts need a subscription)
     $('#lays').querySelectorAll('.lay').forEach(l=>{
       l.onclick=()=>{
-        if(l.dataset.locked && !isPremium()){ toast(t('هذا التخطيط للمشتركين المميزين ✦','This layout is for Premium members ✦')); return; }
+        if(l.dataset.locked && !canDesign()){ toast(t('هذا التخطيط للمشتركين المميزين ✦','This layout is for Premium members ✦')); return; }
         state.layout=l.dataset.lay;
         $('#lays').querySelectorAll('.lay').forEach(x=>x.classList.toggle('active',x===l));
         paint();
@@ -1589,9 +1609,20 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     // color template picker (locked colors need a subscription)
     $('#tpls').querySelectorAll('.tpl').forEach(t=>{
       t.onclick=()=>{
-        if(t.dataset.locked && !isPremium()){ toast(curLang()==='en'?'This color is for Premium members ✦':'هذا اللون للمشتركين المميزين ✦'); return; }
+        if(t.dataset.locked && !canDesign()){ toast(curLang()==='en'?'This color is for Premium members ✦':'هذا اللون للمشتركين المميزين ✦'); return; }
         state.template=t.dataset.tpl;
         $('#tpls').querySelectorAll('.tpl').forEach(x=>x.classList.toggle('active',x===t));
+        paint();
+      };
+    });
+
+    // avatar frame picker (some frames are premium / coin-unlocked)
+    const framesRow=$('#framesRow');
+    if(framesRow) framesRow.querySelectorAll('.frm').forEach(f=>{
+      f.onclick=()=>{
+        if(f.dataset.locked && !canDesign()){ toast(t('هذا الإطار مميّز ✦ — افتحه من متجر المكافآت','This frame is Premium ✦ — unlock it from the Rewards store')); return; }
+        state.frame=f.dataset.frm;
+        framesRow.querySelectorAll('.frm').forEach(x=>x.classList.toggle('active',x===f));
         paint();
       };
     });
@@ -1611,12 +1642,13 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         const id = editingId || await uniqueShortId();
         // free accounts can't save premium profile features
         if(!isPremium()){
-          const li=LAYOUTS.findIndex(l=>l.id===state.layout); if(li>=FREE_PROFILE_LAYOUTS) state.layout=(LAYOUTS[0]||{}).id||state.layout;
-          const ti=TEMPLATES.findIndex(t=>t.id===state.template); if(ti>=FREE_PROFILE_COLORS) state.template=(TEMPLATES[0]||{}).id||state.template;
+          const li=LAYOUTS.findIndex(l=>l.id===state.layout); if(li>=FREE_PROFILE_LAYOUTS && !canDesign()) state.layout=(LAYOUTS[0]||{}).id||state.layout;
+          const ti=TEMPLATES.findIndex(t=>t.id===state.template); if(ti>=FREE_PROFILE_COLORS && !canDesign()) state.template=(TEMPLATES[0]||{}).id||state.template;
           state.threeD=false; state.anim='none'; if(MOTIONS[0]) state.motion3d=MOTIONS[0].id;
           state.gallery=[]; state.videos=[];
         }
-        const clean = {...state, ownerUid:owner, ownerName, createdAt, updatedAt:Date.now(), viewSalt:null, viewPassHash:null};
+        const elgLevel = (function(){ try{ return parseInt(localStorage.getItem('elg_level'),10)||0; }catch(e){ return 0; } })();
+        const clean = {...state, ownerUid:owner, ownerName, createdAt, updatedAt:Date.now(), viewSalt:null, viewPassHash:null, elgLevel};
         await set(ref(db,'profiles/'+id), clean);
         await set(ref(db,'userProfiles/'+owner+'/'+id), {name:state.name||'بدون اسم', template:state.template, updatedAt:Date.now()});
         // now in edit mode for subsequent saves
@@ -2043,6 +2075,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         msg:t('تحقّق من اتصالك بالإنترنت أو من قواعد قاعدة البيانات، ثم أعد المحاولة.','Check your internet connection or your database rules, then try again.'), showReload:true});
     }
   }
+  const blogFrameClass = d => (d && d.frame && /^[a-z0-9]{1,16}$/i.test(d.frame) && d.frame!=='none') ? ' blog-fr blog-fr-'+d.frame : '';
   function blogShell(d){
     const dz = blogDesign(d.design);
     document.body.style.background = dz.bg;
@@ -2236,7 +2269,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     const layout = hasSide
       ? `<div class="blog-layout"><div class="blog-main">${main}</div>${blogSidebar(d,posts)}</div>`
       : main;
-    $('#app').innerHTML = `<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh} ${bAnim(d)} ${bTilt(d)}">
+    $('#app').innerHTML = `<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh}${blogFrameClass(d)} ${bAnim(d)} ${bTilt(d)}">
       ${blogTop(d,dz)}${blogTicker(d)}${blogHero(d,dz)}
       <div class="blog-wrap">${layout}</div>
       ${foot}</div>`;
@@ -2341,7 +2374,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     const others = posts.map((x,i)=>({x,i})).filter(o=>o.i!==idx).slice(0,3);
     const more = others.length ? `<div class="art-more"><div class="blog-sec-h"><h3>${t('مقالات أخرى','More Articles')}</h3><span class="rule"></span></div>
       <div class="blog-grid">${others.map(o=>blogPostCard(o.x,o.i)).join('')}</div></div>` : '';
-    $('#app').innerHTML = `<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh}">
+    $('#app').innerHTML = `<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh}${blogFrameClass(d)}">
       ${blogTop(d,dz)}
       <div class="article-view">
         <button class="art-back">${t('→ العودة إلى المدونة','→ Back to blog')}</button>
@@ -2496,7 +2529,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   }
 
   /* ---------- blog builder state ---------- */
-  const BLOG_EMPTY = { title:'', subtitle:'', author:'', authorEn:'', about:'', cover:'', logo:'', design:'bd1',
+  const BLOG_EMPTY = { title:'', subtitle:'', author:'', authorEn:'', about:'', cover:'', logo:'', design:'bd1', frame:'none',
     threeD:false, anim:'none', searchStyle:'off', sidebarStyle:'none', tickerStyle:'none', posts:[] };
   const BLOG_SAMPLE = {
     title:t('مدوّنة الفكر والمعرفة','The Thought & Knowledge Blog'), subtitle:t('مقالات في العلم والثقافة والتطوير الذاتي — تُنشر بعناية لتثري عقلك.','Articles on science, culture, and self-development — carefully written to enrich your mind.'),
@@ -2596,11 +2629,20 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         <details class="acc" open>
           <summary><span class="sum-t">${UICON.palette} ${t('تصميم المدونة','Blog Design')} <span style="color:var(--muted-2);font-weight:400">(${BLOG_DESIGNS.length})</span></span></summary>
           <div class="acc-body">
-            ${isPremium()?'':gateNote(t('أول '+FREE_BLOG_DESIGNS+' تصميماً مجانية — والباقي (حتى 150) للمشتركين المميزين.','The first '+FREE_BLOG_DESIGNS+' designs are free — the rest (up to 150) are for premium subscribers.'))}
+            ${canDesign()?'':gateNote(t('أول '+FREE_BLOG_DESIGNS+' تصميماً مجانية — والباقي (حتى 150) للمشتركين المميزين.','The first '+FREE_BLOG_DESIGNS+' designs are free — the rest (up to 150) are for premium subscribers.'))}
             <input id="bdSearch" class="lay-search" placeholder="${t('ابحث عن تصميم…','Search for a design…')}"/>
             <div class="bd-picker" id="bdPicker">
-              ${BLOG_DESIGNS.map(d=>{ const lk=blogDesignLocked(d.id); return `<div class="bd-swatch ${d.id===s.design?'active':''} ${lk?'locked':''}" data-bd="${d.id}" data-name="${esc(d.name)}" ${lk?'data-locked="1"':''}>
+              ${BLOG_DESIGNS.map(d=>{ const lk=blogDesignLocked(d.id) && !canDesign(); return `<div class="bd-swatch ${d.id===s.design?'active':''} ${lk?'locked':''}" data-bd="${d.id}" data-name="${esc(d.name)}" ${lk?'data-locked="1"':''}>
                 <div class="sw" style="background:linear-gradient(135deg,${d.accent},${d.accent2})">${lk?'<span class="sw-lock">'+LOCKICON+'</span>':''}</div><div class="nm">${esc(d.name)}</div></div>`; }).join('')}
+            </div>
+          </div>
+        </details>
+
+        <details class="acc">
+          <summary><span class="sum-t">${UICON.person} ${t('إطار المدونة','Blog frame')} <span style="color:var(--muted-2);font-weight:400">(${FRAMES.length})</span></span></summary>
+          <div class="acc-body">
+            <div class="frames-row" id="bFramesRow">
+              ${FRAMES.map(f=>{ const lk=f.pro && !canDesign(); return `<div class="frm ${f.id===s.frame?'active':''} ${lk?'locked':''}" data-frm="${f.id}" ${lk?'data-locked="1"':''}><div class="frm-prev blog-frprev blog-fr-${f.id}"></div><div class="frm-n">${esc(f.name)}${lk?' '+LOCKICON:''}</div></div>`; }).join('')}
             </div>
           </div>
         </details>
@@ -2687,7 +2729,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       const hasSide=bSidebarStyle(d)!=='none';
       const main=`${blogSearchBox(d)}${previewBody(d)}`;
       const layout=hasSide?`<div class="blog-layout"><div class="blog-main">${main}</div>${blogSidebar(d,posts)}</div>`:main;
-      el.innerHTML=`<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh} ${bAnim(d)} ${bTilt(d)}" style="min-height:auto">${blogTop(d,dz)}${blogTicker(d)}${blogHero(d,dz)}<div class="blog-wrap">${layout}</div></div>`;
+      el.innerHTML=`<div class="blog ${dz.id} bf-${dz.bf} bh-${dz.bh}${blogFrameClass(d)} ${bAnim(d)} ${bTilt(d)}" style="min-height:auto">${blogTop(d,dz)}${blogTicker(d)}${blogHero(d,dz)}<div class="blog-wrap">${layout}</div></div>`;
       if(d.threeD) wireBlogTilt(el);
     };
     function previewBody(d){
@@ -2708,13 +2750,22 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
 
     // design picker (locked designs need a subscription)
     $('#bdPicker').querySelectorAll('.bd-swatch').forEach(sw=>sw.onclick=()=>{
-      if(sw.dataset.locked && !isPremium()){ toast(t('هذا التصميم للمشتركين المميزين ✦','This design is for Premium subscribers ✦')); return; }
+      if(sw.dataset.locked && !canDesign()){ toast(t('هذا التصميم للمشتركين المميزين ✦','This design is for Premium subscribers ✦')); return; }
       blogState.design=sw.dataset.bd;
       $('#bdPicker').querySelectorAll('.bd-swatch').forEach(x=>x.classList.toggle('active',x===sw));
       repaint();
     });
     const bs=$('#bdSearch'); if(bs) bs.oninput=()=>{ const q=bs.value.trim();
       $('#bdPicker').querySelectorAll('.bd-swatch').forEach(el=>{ el.style.display=el.dataset.name.includes(q)?'':'none'; }); };
+
+    // blog frame picker (some frames are premium / coin-unlocked)
+    const bfr=$('#bFramesRow');
+    if(bfr) bfr.querySelectorAll('.frm').forEach(f=>f.onclick=()=>{
+      if(f.dataset.locked && !canDesign()){ toast(t('هذا الإطار مميّز ✦ — افتحه من متجر المكافآت','This frame is Premium ✦ — unlock it from the Rewards store')); return; }
+      blogState.frame=f.dataset.frm;
+      bfr.querySelectorAll('.frm').forEach(x=>x.classList.toggle('active',x===f));
+      repaint();
+    });
 
     // 3D / animation / search / sidebar / ticker options
     const chkThree=$('#f-b-threeD'); if(chkThree) chkThree.onchange=()=>{ blogState.threeD=chkThree.checked; repaint(); };
@@ -2873,7 +2924,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
         // free accounts can't save premium features (advanced elements + exclusive designs)
         if(!isPremium()){
           blogState.threeD=false; blogState.anim='none'; blogState.searchStyle='off'; blogState.sidebarStyle='none'; blogState.tickerStyle='none';
-          if(blogDesignLocked(blogState.design)) blogState.design='bd1';
+          if(blogDesignLocked(blogState.design) && !canDesign()) blogState.design='bd1';
         }
         const cleanPosts = blogState.posts.filter(p=>p&&(p.title||p.body)).map(p=>({...p, published:p.published!==false}));
         const pubCount = cleanPosts.filter(p=>p.published!==false).length;
@@ -3274,6 +3325,11 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
   async function getPremium(uid){ try{ const s=await get(child(ref(db),'premium/'+uid)); return s.exists()?s.val():null; }catch(e){ return null; } }
   const premiumActive = p => !!(p && p.active && (!p.expires || p.expires>Date.now()));
   const isPremium = () => !!(currentUser && currentUser.premium);
+  /* designs/layouts unlocked by spending earned coins in the rewards store (client-side).
+     Unlocks ONLY visual layouts/colors/blog-designs — NOT ad-free or the premium badge,
+     so paid Premium keeps its value while coins let users unlock the look. */
+  const designsUnlocked = () => { try{ return localStorage.getItem('elg_designs_unlocked')==='1'; }catch(e){ return false; } };
+  const canDesign = () => isPremium() || designsUnlocked();
   const fmtDay = ts => { try{ return new Date(ts).toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'}); }catch{ return ''; } };
   /* ---- premium gating: which features require a subscription ---- */
   const FREE_BLOG_DESIGNS = 50;      // first 50 blog designs are free
@@ -4264,7 +4320,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       S = { xp:0, level:1, totalXp:0, streak:0, lastDay:null, days:0, pages:{}, ach:{}, seenWelcome:false, cooldown:{} };
     }
     S.pages = S.pages||{}; S.ach = S.ach||{}; S.cooldown = S.cooldown||{};
-    var save = function(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
+    var save = function(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); localStorage.setItem('elg_level', S.level||1); }catch(e){} };
     var need = function(lvl){ return 60 + lvl*40; };   // xp needed to reach next level
 
     /* ---------- achievements ---------- */
@@ -4313,9 +4369,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       + '.elg-a:hover .tip{opacity:1}'
       + '.elg-xp-fly{position:fixed;z-index:100000;font-weight:800;color:var(--gold,#d0aa4e);font-size:15px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.6);animation:elgFly 1.1s ease forwards}'
       + '@keyframes elgFly{0%{opacity:0;transform:translateY(0) scale(.7)}20%{opacity:1;transform:translateY(-10px) scale(1.1)}100%{opacity:0;transform:translateY(-52px) scale(1)}}'
-      + '.elg-ov{position:fixed;inset:0;z-index:100001;background:rgba(6,10,20,.72);backdrop-filter:blur(6px);display:grid;place-items:center;opacity:0;transition:.3s;padding:18px;direction:'+(RTL?'rtl':'ltr')+'}'
+      + '.elg-ov{position:fixed;inset:0;z-index:100001;background:rgba(6,10,20,.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;opacity:0;transition:.3s;padding:16px;overflow-y:auto;direction:'+(RTL?'rtl':'ltr')+'}'
       + '.elg-ov.on{opacity:1}'
-      + '.elg-card{width:360px;max-width:100%;background:var(--card,#111d33);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:26px 24px;text-align:center;color:#eaf1ff;'
+      + '.elg-card{width:360px;max-width:100%;max-height:90vh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:var(--card,#111d33);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:26px 24px;text-align:center;color:#eaf1ff;'
       +   'box-shadow:0 30px 80px rgba(0,0,0,.6);transform:translateY(16px) scale(.94);transition:.35s cubic-bezier(.2,.9,.2,1)}'
       + '.elg-ov.on .elg-card{transform:none}'
       + '.elg-emoji{font-size:52px;line-height:1;margin-bottom:6px;animation:elgPop .6s cubic-bezier(.2,1.5,.4,1)}'
@@ -4358,7 +4414,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       + '.elg-panel{max-height:calc(100vh - 120px);overflow-y:auto;-webkit-overflow-scrolling:touch}'
       + '.elg-orb{bottom:calc(16px + env(safe-area-inset-bottom,0px))}'
       + '.elg-panel{bottom:calc(82px + env(safe-area-inset-bottom,0px))}'
-      + '@media (max-width:520px){.elg-orb{width:52px;height:52px}.elg-orb svg{width:52px;height:52px}.elg-panel{width:calc(100vw - 20px);'+(RTL?'left':'right')+':10px;max-height:72vh}.elg-card{padding:22px 18px}.elg-card h3{font-size:20px}}'
+      + '@media (max-width:520px){.elg-orb{width:52px;height:52px}.elg-orb svg{width:52px;height:52px}.elg-panel{width:calc(100vw - 20px);'+(RTL?'left':'right')+':10px;max-height:72vh}'
+      +   '.elg-ov{padding:12px}.elg-card{width:100%!important;padding:20px 16px;max-height:92vh;border-radius:20px}.elg-card h3{font-size:19px}.elg-emoji{font-size:44px}'
+      +   '.elg-store-list{max-height:46vh}.elg-game{height:240px;max-height:40vh}.elg-si .si-d{display:none}.elg-si{padding:9px 10px}}'
       + '.elg-week{background:rgba(255,255,255,.04);border-radius:12px;padding:9px 11px;margin-bottom:12px}'
       + '.elg-week .wh{font-size:12px;margin-bottom:6px}.elg-week .wh b{color:var(--gold,#d0aa4e)}'
       + '.elg-week .mp{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}'
@@ -4388,7 +4446,34 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       + '.elg-gamebtn{width:100%;cursor:pointer;padding:10px;border-radius:11px;font-weight:800;font-size:13px;color:#eaf1ff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);font-family:inherit;margin-bottom:12px}'
       + '.elg-gbar{display:flex;justify-content:space-between;font-size:15px;font-weight:800;margin:6px 0 10px}.elg-gbar b{color:var(--gold,#d0aa4e)}'
       + '.elg-game{position:relative;height:280px;max-height:44vh;background:radial-gradient(circle at 50% 15%,#13223f,#0a1120);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.08);touch-action:none}'
-      + '.elg-star{position:absolute;font-size:27px;line-height:1;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .15s,opacity .15s;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))}';
+      + '.elg-star{position:absolute;font-size:27px;line-height:1;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .15s,opacity .15s;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))}'
+      + '.elg-coins{display:inline-flex;align-items:center;gap:3px;font-weight:800;color:#ffd77a;font-size:11px;margin-inline-start:8px}'
+      + '.elg-storebtn{width:100%;cursor:pointer;padding:10px;border-radius:11px;font-weight:800;font-size:13px;color:#10203a;background:linear-gradient(120deg,#ffdf91,#d0aa4e);border:0;font-family:inherit;margin-bottom:12px;box-shadow:0 8px 20px -12px rgba(208,170,78,.6)}'
+      + '.elg-store-list{display:flex;flex-direction:column;gap:9px;max-height:52vh;overflow-y:auto;margin:8px 0 2px;text-align:start}'
+      + '.elg-si{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:10px 11px}'
+      + '.elg-si .si-ic{width:38px;height:38px;flex:0 0 auto;border-radius:11px;display:grid;place-items:center;font-size:19px;background:rgba(255,255,255,.06)}'
+      + '.elg-si .si-b{flex:1;min-width:0}.elg-si .si-t{font-weight:800;font-size:13px}.elg-si .si-d{font-size:11px;color:#9fb0c8;line-height:1.5}'
+      + '.elg-si .si-buy{flex:0 0 auto;border:0;cursor:pointer;border-radius:10px;padding:8px 11px;font-weight:800;font-size:12px;color:#10203a;background:var(--grad-gold,linear-gradient(120deg,#e7c877,#d0aa4e));font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:3px}'
+      + '.elg-si .si-buy.owned{background:rgba(255,255,255,.08);color:#9fb0c8;cursor:default}'
+      + '.elg-si .si-buy.active{background:rgba(125,227,255,.22);color:#cdeffd;cursor:pointer}'
+      + '.elg-si.dim{opacity:.5}'
+      + '.elg-orb.elg-th-gold{background:linear-gradient(135deg,#3a2c07,#111d33)!important;border-color:rgba(208,170,78,.65)!important;box-shadow:0 8px 26px rgba(208,170,78,.4)!important}'
+      + '.elg-orb.elg-th-gold .elg-lv{color:#ffd77a!important}'
+      + '.elg-orb.elg-th-neon{border-color:#7de3ff!important;box-shadow:0 0 18px rgba(125,227,255,.55),0 8px 26px rgba(0,0,0,.45)!important}'
+      + '.elg-orb.elg-th-neon .elg-lv{color:#7de3ff!important}'
+      + '.elg-orb.elg-th-emerald{border-color:#37d99a!important;box-shadow:0 0 16px rgba(55,217,154,.5),0 8px 26px rgba(0,0,0,.45)!important}'
+      + '.elg-orb.elg-th-emerald .elg-lv{color:#5df0b6!important}'
+      + '.elg-orb.elg-th-royal{background:linear-gradient(135deg,#2a1150,#111d33)!important;border-color:#a074e6!important;box-shadow:0 0 18px rgba(160,116,230,.55),0 8px 26px rgba(0,0,0,.45)!important}'
+      + '.elg-orb.elg-th-royal .elg-lv{color:#c9a8ff!important}'
+      + '.elg-orb.elg-th-sunset{background:linear-gradient(135deg,#3a1a10,#111d33)!important;border-color:#ff9e5e!important;box-shadow:0 0 18px rgba(255,158,94,.5),0 8px 26px rgba(0,0,0,.45)!important}'
+      + '.elg-orb.elg-th-sunset .elg-lv{color:#ffc08a!important}'
+      + '.elg-boostchip{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(120deg,#7de3ff,#7aa0ea);color:#0a1120;font-weight:800;font-size:11px;padding:3px 9px;border-radius:99px;margin-bottom:10px}'
+      + '.elg-cpresets{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 16px}'
+      + '.elg-cp{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.18);transition:transform .15s}'
+      + '.elg-cp:hover{transform:scale(1.14)}'
+      + '.elg-cpick{border-radius:14px;overflow:hidden;padding:0}'
+      + '.elg-mybadges{font-size:13px;letter-spacing:2px;margin-inline-start:3px}'
+      + '.elg-notifbtn{width:100%;cursor:pointer;padding:10px;border-radius:11px;font-weight:800;font-size:13px;color:#06251a;background:linear-gradient(120deg,#37d99a,#7de3ff);border:0;font-family:inherit;margin-bottom:12px}';
     try{ var st=document.createElement('style'); st.textContent=css; document.head.appendChild(st); }catch(e){}
 
     /* ---------- confetti ---------- */
@@ -4443,7 +4528,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     function unlock(id){
       if(S.ach[id]) return; var a=achById(id); if(!a) return;
       S.ach[id]=Date.now(); save();
-      setTimeout(function(){ confetti(); SFX.achieve(); haptic([10,30,10]); showCard(a.icon, T('إنجاز جديد!','Achievement!'), '<b>'+T(a.ar,a.en)+'</b><br>'+T(a.dar,a.den), true, '+40 XP'); addXp(40,'achievement',true); },250);
+      setTimeout(function(){ confetti(); SFX.achieve(); haptic([10,30,10]); showCard(a.icon, T('إنجاز جديد!','Achievement!'), '<b>'+T(a.ar,a.en)+'</b><br>'+T(a.dar,a.den), true, '+40 XP'); notifyOS(a.icon+' '+T('إنجاز جديد!','Achievement unlocked!'), T(a.ar,a.en)); addXp(40,'achievement',true); },250);
     }
     function checkAch(){
       if(S.streak>=3) unlock('streak3');
@@ -4453,7 +4538,10 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       if(Object.keys(S.pages).length>=4) unlock('explorer');
     }
     function addXp(n,reason,silent){
-      n=Math.max(0,n|0); if(!n) return; S.xp+=n; S.totalXp+=n;
+      n=Math.max(0,n|0); if(!n) return;
+      if(boostActive()) n=n*(S.boostMult||2);           // ×2 / ×3 XP boost from the store
+      S.coins=(S.coins||0)+Math.ceil(n*0.35);           // earn spendable coins alongside XP
+      S.xp+=n; S.totalXp+=n;
       try{ var wk=ensureWeek(); wk.earned+=n;
         if(!wk.claimed && wk.earned>=wk.goal){ wk.claimed=true;
           setTimeout(function(){ confetti(); celebrate(); showCard('🏆', T('تحدّي الأسبوع!','Weekly Challenge!'), T('أكملت هدف الأسبوع','You hit the weekly goal!')+' <b>+100 XP</b>', true, '+100 XP'); addXp(100,'week',true); }, 320); } }catch(e){}
@@ -4464,6 +4552,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       if(up){ var _ti=titleFor(S.level), _rk=(S.rank!==_ti.en); if(_rk){ S.rank=_ti.en; save(); }
         setTimeout(function(){ confetti(); SFX.levelup(); haptic([15,40,15]);
         showCard('🎉', T('مستوى جديد!','Level Up!'), T('وصلت للمستوى','You reached level')+' <b>'+S.level+'</b> — '+_ti.ic+' '+T(_ti.ar,_ti.en), true);
+        notifyOS('🎉 '+T('مستوى جديد!','Level up!'), T('وصلت للمستوى','You reached level')+' '+S.level+' — '+T(_ti.ar,_ti.en));
         if(_rk) popToast(_ti.ic, T('رتبة جديدة: ','New rank: ')+T(_ti.ar,_ti.en));
         var o=document.querySelector('.elg-orb'); if(o){ o.classList.add('elg-pulse'); setTimeout(function(){o.classList.remove('elg-pulse');},700);} },silent?400:60); }
       checkAch();
@@ -4480,7 +4569,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       var orb=document.querySelector('.elg-orb'); if(!orb) return;
       var pct=S.xp/need(S.level);
       orb.innerHTML=ring(56,pct,4)+'<span class="elg-lv">'+S.level+'</span><span class="elg-lvt">LVL</span>';
-      updateDot();
+      updateDot(); applyCosmetics();
       var panel=document.querySelector('.elg-panel'); if(panel && panel.classList.contains('on')) renderPanel();
     }
     function renderPanel(){
@@ -4511,13 +4600,18 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       var en=ensureEnergy(), epct=Math.round(Math.min(1,en.prog/ENERGY_GOAL)*100), eready=en.prog>=ENERGY_GOAL;
       var energyHtml='<div class="elg-energy"><span>⚡</span><div class="eb"><i style="width:'+epct+'%"></i></div>'+(eready?'<button class="elg-eclaim">'+T('اجمع','Claim')+' +'+energyReward()+'</button>':'<span class="ec">'+en.prog+'/'+ENERGY_GOAL+'</span>')+'</div>';
       var gameHtml='<button class="elg-gamebtn">🎮 '+T('لعبة سريعة — اصطياد النجوم','Quick game — Catch stars')+'</button>';
+      var storeHtml='<button class="elg-storebtn">🛍️ '+T('متجر المكافآت','Rewards store')+' · 🪙 '+(S.coins||0)+'</button>';
+      var boostHtml=boostActive()?'<div class="elg-boostchip">⚡ '+T('مضاعفة ×'+(S.boostMult||2)+' فعّالة الآن',(S.boostMult||2)+'× XP boost active')+'</div>':'';
+      var myBadges=STORE.filter(function(x){return x.type==='badge' && owned(x.id);}).map(function(x){return x.ic;}).join(' ');
+      var notifOn=(notifCap() && S.osNotif && Notification.permission==='granted');
+      var notifHtml=notifOn ? '' : '<button class="elg-notifbtn">🔔 '+T('فعّل تنبيهات جهازك','Enable device alerts')+'</button>';
       p.innerHTML=''
         +'<div class="elg-ph"><div class="elg-ring">'+ring(44,S.xp/need(S.level),4)+'<b>'+S.level+'</b></div>'
-        +'<div class="elg-meta"><div class="t">'+titleFor(S.level).ic+' '+T(titleFor(S.level).ar,titleFor(S.level).en)+' · L'+S.level+'</div><div class="s">'+S.xp+' / '+need(S.level)+' XP · '+T('إجمالي','Total')+' '+S.totalXp+'</div></div>'
+        +'<div class="elg-meta"><div class="t">'+titleFor(S.level).ic+' '+T(titleFor(S.level).ar,titleFor(S.level).en)+' · L'+S.level+(myBadges?' <span class="elg-mybadges">'+myBadges+'</span>':'')+'</div><div class="s">'+S.xp+' / '+need(S.level)+' XP<span class="elg-coins">🪙 '+(S.coins||0)+'</span></div></div>'
         +'<button class="elg-mute" title="'+T('الصوت','Sound')+'">'+(S.muted?'🔇':'🔊')+'</button></div>'
         +'<div class="elg-bar"><i style="width:'+pct+'%"></i></div>'
         +'<div class="elg-streak">🔥 <span>'+T('سلسلة الأيام','Daily streak')+':</span> <b>'+S.streak+' '+T('يوم','days')+'</b></div>'
-        + weekHtml + energyHtml + wheelHtml + gameHtml + chestHtml + mHtml
+        + boostHtml + notifHtml + weekHtml + energyHtml + wheelHtml + gameHtml + storeHtml + chestHtml + mHtml
         +'<div class="elg-atitle">'+T('الإنجازات','ACHIEVEMENTS')+' ('+Object.keys(S.ach).length+'/'+ACH.length+')</div>'
         +'<div class="elg-grid">'+grid+'</div>';
       var cb=p.querySelector('.elg-claim'); if(cb) cb.onclick=function(e){ e.stopPropagation(); claimChest(); renderPanel(); };
@@ -4525,6 +4619,8 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       var wb=p.querySelector('.elg-wheelbtn'); if(wb) wb.onclick=function(e){ e.stopPropagation(); openWheel(); };
       var ec=p.querySelector('.elg-eclaim'); if(ec) ec.onclick=function(e){ e.stopPropagation(); claimEnergy(); renderPanel(); };
       var gb=p.querySelector('.elg-gamebtn'); if(gb) gb.onclick=function(e){ e.stopPropagation(); openGame(); };
+      var sb2=p.querySelector('.elg-storebtn'); if(sb2) sb2.onclick=function(e){ e.stopPropagation(); openStore(); };
+      var nb=p.querySelector('.elg-notifbtn'); if(nb) nb.onclick=function(e){ e.stopPropagation(); askNotif(); };
     }
     function buildOrb(){
       if(document.querySelector('.elg-orb')) return;
@@ -4576,7 +4672,9 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       if(S.lastDay!==d){
         var y=new Date(); y.setDate(y.getDate()-1);
         var yStr=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();
-        S.streak = (S.lastDay===yStr) ? (S.streak+1) : 1;
+        if(S.lastDay===yStr){ S.streak=(S.streak||0)+1; }
+        else if((S.streakFreeze||0)>0 && S.lastDay){ S.streakFreeze--; setTimeout(function(){ popToast('🧊', T('تم استخدام تجميد السلسلة — سلسلتك محفوظة','Streak freeze used — streak saved')); },1200); }
+        else { S.streak=1; }
         S.lastDay=d; S.days=(S.days||0)+1; S.pages={}; save();
         if(S.seenWelcome){ // don't stack on the very first welcome
           var bonus=10+Math.min(20,S.streak*2);
@@ -4811,7 +4909,7 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       try{ if(document.visibilityState && document.visibilityState!=='visible') return;
         if(Date.now()-_lastActive>75000) return;               // idle guard: must be genuinely active
         var e=ensureEnergy(); if(e.prog<ENERGY_GOAL){ e.prog++; save();
-          if(e.prog>=ENERGY_GOAL){ popToast('⚡', T('طاقتك امتلأت — اجمع مكافأتك!','Energy full — claim it!')); haptic(20); SFX.success(); }
+          if(e.prog>=ENERGY_GOAL){ popToast('⚡', T('طاقتك امتلأت — اجمع مكافأتك!','Energy full — claim it!')); haptic(20); SFX.success(); notifyOS('⚡ '+T('طاقتك امتلأت!','Energy full!'), T('عُد واجمع مكافأتك من elgoharyX','Come claim your reward on elgoharyX')); }
           updateDot(); var pn=document.querySelector('.elg-panel'); if(pn&&pn.classList.contains('on')) renderPanel();
         }
       }catch(x){}
@@ -4856,10 +4954,165 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
       }catch(e){}
     }
 
+    /* ---------- rewards economy: coins + store + cosmetics ---------- */
+    function addCoins(n){ n=Math.max(0,Math.ceil(n||0)); if(!n) return; S.coins=(S.coins||0)+n; save(); }
+    function boostActive(){ return (S.boostUntil||0) > Date.now(); }
+    function owned(id){ return !!(S.owned && S.owned[id]); }
+    var STORE=[
+      {id:'unlock_designs', ic:'🎨', ar:'فتح كل التصاميم المدفوعة', en:'Unlock ALL premium designs', dar:'افتح كل تخطيطات البروفايل وألوانه وتصاميم المدونة المدفوعة — دائمًا', den:'Unlock every premium profile layout, color & blog design — forever', cost:600, type:'unlock'},
+      {id:'boost',     ic:'⚡', ar:'مضاعفة النقاط ×2',  en:'2× XP boost',    dar:'كل نقاطك ×2 لمدة 15 دقيقة',        den:'Double all XP for 15 minutes',       cost:80,  type:'boost'},
+      {id:'spin',      ic:'🎡', ar:'لفّة إضافية',       en:'Extra spin',     dar:'أعد تفعيل عجلة الحظ فورًا',          den:'Unlock another wheel spin now',      cost:45,  type:'spin'},
+      {id:'chest',     ic:'🎁', ar:'صندوق فوري',        en:'Instant chest',  dar:'افتح صندوق مكافأة فوريًا (+60)',     den:'Open an instant reward chest (+60)', cost:60,  type:'chest'},
+      {id:'mega',      ic:'🚀', ar:'مضاعفة النقاط ×3',  en:'3× XP boost',    dar:'كل نقاطك ×3 لمدة 10 دقائق',         den:'Triple all XP for 10 minutes',       cost:140, type:'mega'},
+      {id:'energyfill',ic:'🔋', ar:'ملء الطاقة فورًا',  en:'Instant energy', dar:'املأ شريط الطاقة وجهّز مكافأته',     den:'Fill your energy bar instantly',     cost:40,  type:'energyfill'},
+      {id:'streakfreeze',ic:'🧊',ar:'تجميد السلسلة',    en:'Streak freeze',  dar:'يحمي سلسلتك إذا فوّتّ يومًا',         den:'Protects your streak if you miss a day', cost:110, type:'streakfreeze'},
+      {id:'mystery',   ic:'🎲', ar:'صندوق الغموض',      en:'Mystery box',    dar:'مكافأة عشوائية (20–200 نقطة)',       den:'Random reward (20–200 XP)',          cost:70,  type:'mystery'},
+      {id:'th_gold',   ic:'👑', ar:'ثيم ذهبي للكرة',    en:'Gold orb theme', dar:'مظهر ذهبي فاخر دائم لكرتك',          den:'Permanent luxe gold orb',            cost:120, type:'theme'},
+      {id:'th_neon',   ic:'🌈', ar:'ثيم نيون',          en:'Neon theme',     dar:'توهّج نيون دائم لكرتك',              den:'Permanent neon glow orb',            cost:150, type:'theme'},
+      {id:'th_emerald',ic:'💚', ar:'ثيم زمرّدي',        en:'Emerald theme',  dar:'مظهر زمرّدي دائم لكرتك',            den:'Permanent emerald orb',              cost:150, type:'theme'},
+      {id:'th_royal',  ic:'🔮', ar:'ثيم ملكي',          en:'Royal theme',    dar:'توهّج بنفسجي ملكي دائم',            den:'Permanent royal purple orb',         cost:150, type:'theme'},
+      {id:'th_sunset', ic:'🌅', ar:'ثيم الغروب',        en:'Sunset theme',   dar:'تدرّج غروب دافئ دائم',              den:'Permanent warm sunset orb',          cost:150, type:'theme'},
+      {id:'customcolor',ic:'🎨', ar:'لون مخصّص للكرة',   en:'Custom orb color', dar:'اختر أي لون تريده لكرتك — يمكنك تغييره لاحقًا', den:'Pick any color for your orb — change it anytime', cost:200, type:'customcolor'},
+      {id:'bdg_fire',   ic:'🔥', ar:'شارة اللهب',        en:'Fire badge',     dar:'شارة لهب تظهر بجانب رتبتك',          den:'A fire badge shown by your rank',    cost:90,  type:'badge'},
+      {id:'bdg_diamond',ic:'💎', ar:'شارة الألماس',      en:'Diamond badge',  dar:'شارة ألماس فاخرة بجانب رتبتك',       den:'A luxe diamond badge by your rank',  cost:120, type:'badge'},
+      {id:'bdg_crown',  ic:'👑', ar:'شارة التاج',        en:'Crown badge',    dar:'شارة تاج ملكية بجانب رتبتك',         den:'A royal crown badge by your rank',   cost:160, type:'badge'}
+    ];
+    function hexA(h,a){ try{ h=String(h).replace('#',''); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; var n=parseInt(h,16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }catch(e){ return 'rgba(208,170,78,'+a+')'; } }
+    function applyCosmetics(){ var orb=document.querySelector('.elg-orb'); if(!orb) return;
+      ['gold','neon','emerald','royal','sunset'].forEach(function(t){ orb.classList.remove('elg-th-'+t); });
+      orb.style.borderColor=''; orb.style.boxShadow='';
+      var lv=orb.querySelector('.elg-lv');
+      if(S.orbTheme==='custom' && S.orbColor){
+        orb.style.borderColor=S.orbColor; orb.style.boxShadow='0 0 18px '+hexA(S.orbColor,0.55)+',0 8px 26px rgba(0,0,0,.45)';
+        if(lv) lv.style.color=S.orbColor;
+      } else { if(lv) lv.style.color=''; if(S.orbTheme && String(S.orbTheme).indexOf('th_')===0) orb.classList.add('elg-th-'+String(S.orbTheme).replace('th_','')); }
+    }
+    function openColorPicker(){
+      try{
+        if(document.querySelector('.elg-colorwrap')) return;
+        var cur=S.orbColor||'#d0aa4e', presets=['#d0aa4e','#7de3ff','#37d99a','#a074e6','#ff9e5e','#ff5d8f','#5b8cff','#ffd84d'];
+        var ov=document.createElement('div'); ov.className='elg-ov elg-colorwrap';
+        ov.innerHTML='<div class="elg-card" style="width:320px"><div class="elg-emoji">🎨</div><h3>'+T('لون كرتك','Your orb color')+'</h3>'
+          +'<input type="color" class="elg-cpick" value="'+cur+'" style="width:64px;height:64px;border:0;background:none;cursor:pointer">'
+          +'<div class="elg-cpresets">'+presets.map(function(c){ return '<span class="elg-cp" data-c="'+c+'" style="background:'+c+'"></span>'; }).join('')+'</div>'
+          +'<button class="elg-btn elg-capply">'+T('تطبيق','Apply')+'</button><button class="elg-skip elg-cclose">'+T('إغلاق','Close')+'</button></div>';
+        document.body.appendChild(ov); requestAnimationFrame(function(){ ov.classList.add('on'); }); SFX.whoosh();
+        var pick=ov.querySelector('.elg-cpick');
+        ov.querySelectorAll('.elg-cp').forEach(function(sp){ sp.onclick=function(){ pick.value=sp.dataset.c; }; });
+        function close(){ ov.classList.remove('on'); setTimeout(function(){ ov.remove(); },320); var pn=document.querySelector('.elg-panel'); if(pn&&pn.classList.contains('on')) renderPanel(); }
+        ov.querySelector('.elg-capply').onclick=function(){ S.orbTheme='custom'; S.orbColor=pick.value; save(); applyCosmetics(); confetti(); SFX.reward(); haptic(15); popToast('🎨', T('تم تطبيق لونك','Your color applied')); close(); };
+        ov.querySelector('.elg-cclose').onclick=close;
+        ov.addEventListener('click',function(e){ if(e.target===ov) close(); });
+      }catch(e){}
+    }
+    function buyItem(item){
+      try{
+        if(item.type==='theme' && owned(item.id)){ S.orbTheme=item.id; save(); applyCosmetics(); SFX.click(); popToast(item.ic, T('تم تفعيل الثيم','Theme applied')); return; }
+        if(item.type==='unlock' && owned(item.id)){ return; }              // one-time, already owned
+        if(item.type==='customcolor' && owned(item.id)){ SFX.click(); openColorPicker(); return; }   // change color anytime
+        if(item.type==='badge' && owned(item.id)){ return; }
+        if((S.coins||0) < item.cost){ popToast('🪙', T('نقودك غير كافية','Not enough coins')); SFX.error(); haptic(30); return; }
+        S.coins -= item.cost;
+        if(item.type==='boost'){ S.boostUntil=Date.now()+15*60000; S.boostMult=2; }
+        else if(item.type==='mega'){ S.boostUntil=Date.now()+10*60000; S.boostMult=3; }
+        else if(item.type==='spin'){ S.spin={last:null}; }
+        else if(item.type==='chest'){ addXp(60,'store_chest',true); }
+        else if(item.type==='energyfill'){ ensureEnergy(); S.energy.prog=ENERGY_GOAL; }
+        else if(item.type==='streakfreeze'){ S.streakFreeze=(S.streakFreeze||0)+1; }
+        else if(item.type==='mystery'){ var mr=20+Math.floor(Math.random()*181); setTimeout(function(){ addXp(mr,'mystery'); popToast('🎲', T('صندوق الغموض','Mystery box')+' +'+mr+' XP'); },80); }
+        else if(item.type==='theme'){ S.owned=S.owned||{}; S.owned[item.id]=1; S.orbTheme=item.id; applyCosmetics(); }
+        else if(item.type==='customcolor'){ S.owned=S.owned||{}; S.owned[item.id]=1; setTimeout(openColorPicker,140); }
+        else if(item.type==='badge'){ S.owned=S.owned||{}; S.owned[item.id]=1; }
+        else if(item.type==='unlock'){ S.owned=S.owned||{}; S.owned[item.id]=1; try{ localStorage.setItem('elg_designs_unlocked','1'); }catch(e){} }
+        save(); confetti(); SFX.reward(); haptic([12,30,12]); updateDot();
+        popToast(item.ic, T('تم الشراء','Purchased')+' · '+T(item.ar,item.en));
+      }catch(e){}
+    }
+    function openStore(){
+      try{
+        if(document.querySelector('.elg-storewrap')) return;
+        var ov=document.createElement('div'); ov.className='elg-ov elg-storewrap';
+        function rows(){ return STORE.map(function(it){
+          var own=owned(it.id), active=(S.orbTheme===it.id), afford=(S.coins||0)>=it.cost;
+          var btn;
+          if(it.type==='theme'){ btn = active?'<button class="si-buy owned">✓ '+T('مُفعّل','Active')+'</button>'
+            : own?'<button class="si-buy active" data-buy="'+it.id+'">'+T('تفعيل','Use')+'</button>'
+            : '<button class="si-buy" data-buy="'+it.id+'">🪙 '+it.cost+'</button>'; }
+          else if(it.type==='customcolor' && own){ btn='<button class="si-buy active" data-buy="'+it.id+'">🎨 '+T('تغيير','Change')+'</button>'; }
+          else if((it.type==='unlock'||it.type==='badge') && own){ btn='<button class="si-buy owned">✓ '+T('مملوك','Owned')+'</button>'; }
+          else { btn='<button class="si-buy" data-buy="'+it.id+'">🪙 '+it.cost+'</button>'; }
+          return '<div class="elg-si'+((!afford && !own && !active)?' dim':'')+'"><div class="si-ic">'+it.ic+'</div>'
+            +'<div class="si-b"><div class="si-t">'+T(it.ar,it.en)+'</div><div class="si-d">'+T(it.dar,it.den)+'</div></div>'+btn+'</div>';
+        }).join(''); }
+        function render(){ ov.querySelector('.elg-store-list').innerHTML=rows();
+          ov.querySelector('.elg-scoins').textContent=(S.coins||0);
+          ov.querySelectorAll('[data-buy]').forEach(function(b){ b.onclick=function(){ var it=STORE.filter(function(x){return x.id===b.dataset.buy;})[0]; if(it){ buyItem(it); render(); } }; }); }
+        ov.innerHTML='<div class="elg-card" style="width:360px"><div class="elg-emoji">🛍️</div><h3>'+T('متجر المكافآت','Rewards Store')+'</h3>'
+          +'<div style="font-weight:800;color:#ffd77a;margin:-4px 0 6px">🪙 <span class="elg-scoins">0</span> '+T('نقود','coins')+'</div>'
+          +'<div class="elg-store-list"></div><button class="elg-skip elg-sclose">'+T('إغلاق','Close')+'</button></div>';
+        document.body.appendChild(ov); requestAnimationFrame(function(){ ov.classList.add('on'); }); SFX.whoosh();
+        render();
+        var close=function(){ ov.classList.remove('on'); setTimeout(function(){ ov.remove(); },340); var pn=document.querySelector('.elg-panel'); if(pn&&pn.classList.contains('on')) renderPanel(); };
+        ov.querySelector('.elg-sclose').addEventListener('click', close);
+        ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+      }catch(e){}
+    }
+    window.elgStore = function(){ try{ openStore(); }catch(e){} };
+
+    /* ---------- device (OS) notifications for rewards & reminders ---------- */
+    var ELG_LOGO='https://i.ibb.co/1t1TCvH7/103777.png';
+    function notifCap(){ return ('Notification' in window); }
+    function notifyOS(title, body){
+      try{
+        if(!notifCap() || Notification.permission!=='granted' || !S.osNotif) return;
+        var opts={ body:body||'', icon:ELG_LOGO, badge:ELG_LOGO, tag:'elg-reward', dir:RTL?'rtl':'ltr', lang:L };
+        if(navigator.serviceWorker && navigator.serviceWorker.ready){
+          navigator.serviceWorker.ready.then(function(reg){ try{ reg.showNotification(title,opts); }catch(e){ try{ new Notification(title,opts); }catch(x){} } })
+          .catch(function(){ try{ new Notification(title,opts); }catch(x){} });
+        } else { try{ new Notification(title,opts); }catch(e){} }
+      }catch(e){}
+    }
+    function askNotif(){
+      try{
+        if(typeof window.elgPushPrompt==='function'){   // OneSignal configured → subscribe for push even when site is closed
+          window.elgPushPrompt(); S.osNotif=true; save(); SFX.success(); haptic(20);
+          popToast('🔔', T('اسمح بالإشعارات من النافذة لتصلك حتى والموقع مغلق','Allow notifications to get them even when the site is closed'));
+          var pnl=document.querySelector('.elg-panel'); if(pnl&&pnl.classList.contains('on')) renderPanel(); return;
+        }
+        if(!notifCap()){ popToast('🔔', T('جهازك لا يدعم التنبيهات','Notifications not supported here')); return; }
+        Notification.requestPermission().then(function(p){
+          if(p==='granted'){ S.osNotif=true; save(); SFX.success(); haptic(20);
+            notifyOS(T('تم تفعيل التنبيهات! 🔔','Notifications enabled! 🔔'), T('سنذكّرك بمكافآتك وجديد الموقع','We’ll remind you about your rewards & updates'));
+            popToast('🔔', T('تم تفعيل التنبيهات على جهازك','Device notifications enabled'));
+          } else { popToast('🔕', T('لم يتم السماح بالتنبيهات','Notifications not allowed')); }
+          var pn=document.querySelector('.elg-panel'); if(pn&&pn.classList.contains('on')) renderPanel();
+        });
+      }catch(e){}
+    }
+
+    /* ---------- daily motivational message (in-app, once per day) ---------- */
+    var MOTIV=[
+      {ar:'كل يوم فرصة جديدة لتتألّق ✨',            en:'Every day is a new chance to shine ✨'},
+      {ar:'إبداعك اليوم يصنع فرقك غدًا 🚀',          en:'Today’s creativity shapes your tomorrow 🚀'},
+      {ar:'استمر — أنت أقرب مما تظن 💪',            en:'Keep going — you’re closer than you think 💪'},
+      {ar:'خطوة صغيرة كل يوم = إنجاز كبير 🌱',       en:'A small step daily = a big achievement 🌱'},
+      {ar:'بروفايلك ومدونتك يستحقّان التميّز — أكملهما اليوم 🎨', en:'Your profile & blog deserve to shine — finish them today 🎨'},
+      {ar:'النجاح عادة… وعودتك اليوم بدايتها 🔥',    en:'Success is a habit — your visit today builds it 🔥'},
+      {ar:'شارك إبداعك مع العالم، فالعالم بانتظارك 🌍', en:'Share your work with the world — it’s waiting 🌍'},
+      {ar:'أنت تصنع شيئًا يدوم — فخورون بك 🏆',      en:'You’re building something lasting — proud of you 🏆'}
+    ];
+    function showDailyMotivation(){
+      try{ var d=todayStr(); if(S.motivDay===d) return; S.motivDay=d; save();
+        var seed=d.split('-').reduce(function(a,b){ return a+parseInt(b,10); },0);
+        var m=MOTIV[Math.abs(seed)%MOTIV.length];
+        setTimeout(function(){ popToast('🌟', T(m.ar,m.en)); }, 2400);
+      }catch(e){}
+    }
+
     /* ---------- boot ---------- */
     function boot(){
       try{
-        buildOrb(); hookActions(); tickDay(); trackPage(); ensureMissions(); ensureWeek(); updateDot();
+        buildOrb(); hookActions(); tickDay(); trackPage(); ensureMissions(); ensureWeek(); applyCosmetics(); updateDot(); showDailyMotivation();
         ['pointerdown','keydown','scroll','touchstart'].forEach(function(ev){ try{ addEventListener(ev, function(){ _lastActive=Date.now(); }, {passive:true}); }catch(x){} });
         setInterval(tickEnergy, 20000);
         if(!S.seenWelcome){ S.seenWelcome=true; save(); setTimeout(showWelcome, 700); }
@@ -4870,4 +5123,44 @@ import { logVisit, startPresence, captureReferral, recordReferralIfPending, refe
     }
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
   }catch(e){ /* engagement engine failed silently — site unaffected */ }
+})();
+
+/* ============================================================================
+   ONESIGNAL WEB PUSH — free notifications that reach the user's device screen
+   EVEN WHEN THE SITE IS CLOSED. No paid server needed (OneSignal is the sender).
+
+   SETUP (one-time, by the site owner):
+     1) Create a FREE account at https://onesignal.com  → New App/Website
+     2) Platform: "Web" → Site URL: https://ex-eg.github.io/eg2  (typical config)
+        (if you serve from the root domain instead, use https://ex-eg.github.io)
+     3) Choose "Custom code" integration. Copy your OneSignal **App ID**.
+     4) Paste it into ONESIGNAL_APP_ID below, and re-upload app.js.
+     5) Upload the folder  eg2/onesignal/OneSignalSDKWorker.js  too.
+   Then OneSignal shows a subscribe prompt; you send notifications from its
+   dashboard (or schedule them) and they appear on phones even when closed.
+   ========================================================================== */
+(function(){
+  try{
+    var ONESIGNAL_APP_ID = 'YOUR_ONESIGNAL_APP_ID';   // ← paste your OneSignal App ID here
+    if(!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID.indexOf('YOUR_')===0) return;  // not configured yet → do nothing
+    // OneSignal SW lives under /onesignal/ so it never clashes with sw.js.
+    var base = location.pathname.replace(/[^/]*$/,'');          // current directory (e.g. /eg2/)
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    var sc = document.createElement('script');
+    sc.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'; sc.defer = true;
+    document.head.appendChild(sc);
+    window.OneSignalDeferred.push(async function(OneSignal){
+      try{
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          serviceWorkerParam: { scope: base + 'onesignal/' },
+          serviceWorkerPath: 'onesignal/OneSignalSDKWorker.js',
+          allowLocalhostAsSecureOrigin: true
+        });
+        window.__elgPush = OneSignal;   // let the engagement bell trigger the prompt
+      }catch(e){ console.warn('OneSignal init skipped:', e); }
+    });
+    // let the "🔔 enable device alerts" button (engagement panel) open OneSignal's prompt
+    window.elgPushPrompt = function(){ try{ window.OneSignalDeferred.push(function(OneSignal){ try{ OneSignal.Slidedown.promptPush(); }catch(e){ try{ OneSignal.Notifications.requestPermission(); }catch(x){} } }); }catch(e){} };
+  }catch(e){ /* push init failed silently — site unaffected */ }
 })();
